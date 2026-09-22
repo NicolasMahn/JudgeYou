@@ -3,111 +3,128 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>JudgeYou</title>
-    <meta name="description" content="Pseudo-scientific character assessment for group chats, powered by Jev." />
+    <title>JudgeYou · A field guide to the people in your group chat</title>
+    <meta name="description" content="Paste a group chat. Jev classifies everyone in it into one of twelve species." />
+    <link rel="icon" href="img/types/drama_llama.webp" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Unbounded:wght@800;900&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,400..900,0..100;1,9..144,400..900,0..100&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
     />
     <link rel="stylesheet" href="css/theme.css" />
     <link rel="stylesheet" href="css/style.css" />
     <script type="module" src="js/app.js"></script>
   </head>
   <body>
-    <div class="backdrop" aria-hidden="true">
-      <div class="blob"></div>
-      <div class="blob"></div>
-      <div class="blob"></div>
-    </div>
+    <header class="masthead">
+      <strong>JudgeYou</strong>
+      <span>A field guide to the people in your group chat</span>
+      <span>Vol. I · 2026</span>
+    </header>
 
     <main>
-      <header class="hero">
-        <p class="kicker">Institute for Applied Chat Forensics</p>
-        <h1>Judge<span>You</span></h1>
+      <section class="hero">
+        <h1>Who is the <em>problem</em> in your group chat?</h1>
         <p class="lede">
-          Paste a group chat. Jev, a model that answers in calibrated probabilities instead of
-          words, measures everyone in it.
+          Paste the chat. Jev, a model that answers in calibrated probabilities instead of
+          opinions, sorts everyone into one of twelve known species.
         </p>
-      </header>
-
-      <section class="panel intake">
-        <textarea
-          id="chat"
-          spellcheck="false"
-          aria-label="Chat transcript"
-          placeholder="Paste a chat here, or drop a WhatsApp export (.txt).&#10;&#10;One message per line works too:&#10;Ana: are you coming tonight?&#10;Ben: k"
-        ></textarea>
-        <div class="intake-bar">
-          <div id="subjects" class="subjects" aria-live="polite"></div>
-          <button id="sample" type="button">Try a sample chat</button>
-          <button id="judge" class="primary" type="button" disabled>Judge them</button>
-        </div>
-        <p class="fineprint">
-          The chat goes to OpenRouter and TypeSafe for analysis. This page stores nothing.
-        </p>
-        <form id="key-form" class="key-form" hidden>
-          <input
-            id="key"
-            type="password"
-            autocomplete="off"
-            required
-            placeholder="Your OpenRouter key (sk-or-…), kept in this browser only"
-            aria-label="OpenRouter API key"
-          />
-          <button type="submit">Save and judge</button>
-        </form>
-        <p id="error" class="error" role="alert" hidden></p>
       </section>
 
-      <section id="lab" class="panel lab" aria-live="polite" hidden></section>
+      <div class="species-strip" aria-hidden="true">
+        <div id="species-track" class="species-track"></div>
+      </div>
+
+      <section class="intake">
+        <div class="intake-label"><b>Exhibit A</b>The evidence</div>
+        <div>
+          <textarea
+            id="chat"
+            spellcheck="false"
+            aria-label="Chat transcript"
+            placeholder="Paste a chat, or drop an export here: WhatsApp, Telegram, Discord, Slack, Messenger, iMessage, CSV…&#10;&#10;Or just write it out:&#10;Ana: are you coming tonight?&#10;Ben: k"
+          ></textarea>
+          <div class="intake-bar">
+            <div id="subjects" class="subjects" aria-live="polite"></div>
+            <button id="sample" class="link" type="button">Try a sample chat</button>
+            <button id="judge" class="primary" type="button" disabled>Judge them</button>
+          </div>
+          <form id="names-form" class="names-form" hidden>
+            <label for="names">Couldn’t tell who is talking. Who’s in this chat?</label>
+            <input id="names" autocomplete="off" placeholder="Names, separated by commas" />
+            <button type="submit">Use these names</button>
+          </form>
+          <form id="key-form" class="key-form" hidden>
+            <input
+              id="key"
+              type="password"
+              autocomplete="off"
+              required
+              placeholder="Your OpenRouter key (sk-or-…), kept in this browser only"
+              aria-label="OpenRouter API key"
+            />
+            <button type="submit">Save and judge</button>
+          </form>
+          <p class="fineprint">The chat goes to OpenRouter and TypeSafe for analysis. This page stores nothing.</p>
+          <p id="error" class="error" role="alert" hidden></p>
+        </div>
+      </section>
+
+      <section id="lab" class="lab" aria-live="polite" hidden>
+        <img id="lab-specimen" alt="" width="112" height="112" />
+        <div id="lab-log" class="lab-log"></div>
+      </section>
 
       <section id="results" class="results" aria-live="polite" hidden>
-        <div class="panel culprit">
+        <article class="suspect">
+          <img id="suspect-mascot" alt="" width="192" height="192" />
           <div>
-            <p class="culprit-lead">Primary source of drama</p>
-            <p id="culprit-name" class="culprit-name"></p>
-            <p id="culprit-stat" class="culprit-stat"></p>
+            <p class="kicker">Prime suspect</p>
+            <p id="suspect-name" class="suspect-name"></p>
+            <p id="suspect-stat" class="suspect-stat"></p>
           </div>
-          <div id="culprit-bars" class="bars"></div>
-        </div>
-        <div id="cards" class="cards"></div>
+          <div id="suspect-bars" class="bars"></div>
+          <div class="stamp">Guilty</div>
+        </article>
+        <div id="plates" class="plates"></div>
         <p id="footnote" class="footnote"></p>
       </section>
     </main>
 
+    <footer class="colophon">
+      Not peer reviewed. Not reviewed at all. Judgments by Jev from TypeSafe, served through OpenRouter.
+    </footer>
+
     <template id="bar-row">
       <div class="bar-row">
         <span class="who"></span>
-        <div class="track" tabindex="0"><div class="fill"></div></div>
+        <div class="track"><div class="fill"></div></div>
         <span class="value"></span>
       </div>
     </template>
 
-    <template id="card">
-      <article class="panel card">
-        <div class="card-head">
-          <div>
-            <h2 class="name"></h2>
-            <p class="archetype"><span class="archetype-name"></span><span class="species"></span></p>
-          </div>
-          <div class="menace">
-            <span class="menace-value">0</span>
-            <span class="menace-label">Menace Index</span>
-            <div class="severity"></div>
-          </div>
+    <template id="plate">
+      <article class="plate">
+        <div class="plate-head">
+          <span class="plate-no"></span>
+          <span class="menace"><span class="menace-value">0</span>Menace index</span>
         </div>
-        <div class="traits"></div>
+        <div class="plate-figure"><img alt="" width="240" height="240" /><div class="stamp"></div></div>
+        <h2 class="plate-name"></h2>
+        <p class="plate-type"></p>
+        <p class="plate-species"></p>
+        <p class="plate-note"></p>
+        <div class="measures"></div>
         <dl class="findings"></dl>
       </article>
     </template>
 
-    <template id="trait">
-      <div>
-        <div class="trait-top"><span class="trait-name"></span><span class="trait-confidence"></span></div>
+    <template id="scale">
+      <div class="scale">
+        <div class="scale-top"><span class="scale-name"></span><span class="scale-confidence"></span></div>
         <div class="track" tabindex="0"><div class="fill"></div></div>
-        <div class="trait-level"></div>
+        <div class="scale-level"></div>
       </div>
     </template>
 

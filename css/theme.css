@@ -1,38 +1,21 @@
-/* The only place raw color values live. The site is dark-only by design. */
+/* The only place raw color values live. A printed field guide: paper, ink,
+   and one vermilion accent reserved for stamps and emphasis. */
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 
-  --page: #0d0d0d;
-  --surface-1: #1a1a19;
-  --surface-2: #232321;
-  --text-primary: #ffffff;
-  --text-secondary: #c3c2b7;
-  --text-muted: #898781;
-  --gridline: #2c2c2a;
-  --baseline: #383835;
-  --border: rgba(255, 255, 255, 0.1);
+  --paper: #f3ede0;
+  --paper-raised: #f8f4ea;
+  --ink: #1d1b17;
+  --ink-soft: #57524a;
+  --ink-muted: #857e71;
+  --rule: #cfc6b3;
+  --rule-soft: #e2dbcb;
+  --accent: #c2381c;
 
-  /* Identity: one per judged person, in this fixed order. Validated as a set
-     against --surface-1 for color-vision deficiencies. */
-  --series-1: #3987e5;
-  --series-2: #d95926;
-  --series-3: #199e70;
-  --series-4: #c98500;
-  --series-5: #d55181;
-  --series-6: #008300;
-  --series-7: #9085e9;
-  --series-8: #e66767;
+  /* Fine paper grain, tinted by whatever sits beneath it. */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.1 0 0 0 0 0.08 0 0 0 0 0.05 0 0 0 0.07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 
-  --status-good: #0ca30c;
-  --status-warning: #fab219;
-  --status-critical: #d03b3b;
-
-  /* Brand glow for the hero and primary action only, never for data. */
-  --glow-a: #ff3d9a;
-  --glow-b: #7b5cff;
-  --glow-c: #00d1ff;
-
-  --font-display: 'Unbounded', system-ui, sans-serif;
-  --font-body: system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
 }

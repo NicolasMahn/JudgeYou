@@ -2,33 +2,40 @@ import { parseChat, participantsOf } from './parse.js';
 import { buildRequest, readVerdicts, MAX_SUBJECTS } from './questions.js';
 import { askJev, findApiKey, forgetApiKey, rememberApiKey } from './jev.js';
 import { menaceIndex, nearestLevel, normalisedScore, severityOf } from './verdict.js';
-import { ARCHETYPES, FINDINGS, SEVERITY, TRAITS, identityColor } from './presentation.js';
+import { FINDINGS, SEVERITY, TRAITS, TYPES, mascotOf } from './presentation.js';
 import { SAMPLE_CHAT } from './sample.js';
 
 const LAB_LINES = [
   'Establishing chain of custody…',
-  'Calibrating sarcasm detector…',
   'Measuring emoji-to-sincerity ratio…',
   'Counting questions left on read…',
-  'Cross-examining the quiet ones…',
-  'Consulting Jev…',
+  'Consulting the field guide…',
+  'Asking Jev…',
 ];
-const LAB_LINE_MS = 280;
+const LAB_LINE_MS = 340;
+const LAB_FLICKER_MS = 110;
 
 // Jev answers in well under a second; a short minimum lets the verdict land
 // with some ceremony instead of flickering past.
-const MIN_LAB_MS = 1700;
+const MIN_LAB_MS = 1800;
 
 const $ = (id) => document.getElementById(id);
 const chat = $('chat');
 const judgeButton = $('judge');
+const namesForm = $('names-form');
 const keyForm = $('key-form');
 const errorBox = $('error');
 const lab = $('lab');
 const results = $('results');
 
+const typeKeys = Object.keys(TYPES);
+
+// When the format isn't recognised, the user names the people and Jev reads
+// the raw text instead of parsed messages.
 let messages = [];
-let subjects = [];
+let detected = [];
+let typedNames = [];
+const spared = new Set();
 
 const percent = (p) => `${Math.round(p * 100)}%`;
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -37,35 +44,64 @@ function fromTemplate(id) {
   return $(id).content.firstElementChild.cloneNode(true);
 }
 
-function onChatChanged() {
-  messages = parseChat(chat.value);
-  const participants = participantsOf(messages);
-  subjects = participants.slice(0, MAX_SUBJECTS).map((p) => p.name);
-  judgeButton.disabled = subjects.length < 2;
-  renderSubjects(participants);
+function renderSpeciesStrip() {
+  const specimen = (key) => {
+    const item = document.createElement('div');
+    item.className = 'species';
+    const img = new Image(104, 104);
+    img.src = mascotOf(key);
+    img.alt = '';
+    img.loading = 'lazy';
+    const name = document.createElement('span');
+    name.textContent = TYPES[key].name.replace(/^The /, '');
+    item.append(img, name);
+    return item;
+  };
+  // Two copies so the drifting strip loops without a seam.
+  $('species-track').append(...typeKeys.map(specimen), ...typeKeys.map(specimen));
 }
 
-function renderSubjects(participants) {
+function isRawMode() {
+  return detected.length < 2;
+}
+
+function candidates() {
+  return isRawMode() ? typedNames : detected;
+}
+
+function subjects() {
+  return candidates().filter((name) => !spared.has(name)).slice(0, MAX_SUBJECTS);
+}
+
+function onChatChanged() {
+  messages = parseChat(chat.value);
+  detected = participantsOf(messages).map((p) => p.name);
+  spared.clear();
+  namesForm.hidden = !chat.value.trim() || !isRawMode();
+  renderSubjects();
+}
+
+function renderSubjects() {
   const box = $('subjects');
-  box.replaceChildren();
+  box.replaceChildren(
+    ...candidates().map((name) => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'chip';
+      chip.textContent = name;
+      chip.setAttribute('aria-pressed', String(!spared.has(name)));
+      chip.title = spared.has(name) ? 'Judge them after all' : 'Spare them';
+      chip.addEventListener('click', () => {
+        spared.has(name) ? spared.delete(name) : spared.add(name);
+        renderSubjects();
+      });
+      return chip;
+    }),
+  );
 
-  if (chat.value.trim() && subjects.length < 2) {
-    box.textContent = 'Need at least two people talking to judge anyone.';
-    return;
-  }
-
-  subjects.forEach((name, i) => {
-    const chip = document.createElement('span');
-    chip.className = 'chip';
-    chip.style.setProperty('--identity', identityColor(i));
-    chip.textContent = name;
-    box.append(chip);
-  });
-
-  const unjudged = participants.length - subjects.length;
-  if (unjudged > 0) {
-    box.append(`+${unjudged} quieter ${unjudged === 1 ? 'one' : 'ones'} spared`);
-  }
+  const unjudged = candidates().length - spared.size - subjects().length;
+  if (unjudged > 0) box.append(`+${unjudged} quieter ones spared`);
+  judgeButton.disabled = subjects().length < 2;
 }
 
 function showError(message) {
@@ -74,19 +110,28 @@ function showError(message) {
 }
 
 function runLab() {
-  lab.replaceChildren();
+  const log = $('lab-log');
+  const specimen = $('lab-specimen');
+  log.replaceChildren();
   lab.hidden = false;
-  let i = 0;
+
+  let line = 0;
   const addLine = () => {
-    const line = document.createElement('p');
-    line.textContent = LAB_LINES[i++ % LAB_LINES.length];
-    lab.append(line);
-    if (lab.children.length > LAB_LINES.length) lab.firstElementChild.remove();
+    const p = document.createElement('p');
+    p.textContent = LAB_LINES[line++ % LAB_LINES.length];
+    log.append(p);
+    if (log.children.length > 4) log.firstElementChild.remove();
   };
+  let frame = 0;
+  const flicker = () => {
+    specimen.src = mascotOf(typeKeys[frame++ % typeKeys.length]);
+  };
+
   addLine();
-  const timer = setInterval(addLine, LAB_LINE_MS);
+  flicker();
+  const timers = [setInterval(addLine, LAB_LINE_MS), setInterval(flicker, LAB_FLICKER_MS)];
   return () => {
-    clearInterval(timer);
+    timers.forEach(clearInterval);
     lab.hidden = true;
   };
 }
@@ -100,11 +145,12 @@ async function judgeChat() {
     return;
   }
 
+  const judged = subjects();
+  const { body, judgedCount } = buildRequest(isRawMode() ? chat.value : messages, judged);
   keyForm.hidden = true;
   results.hidden = true;
   judgeButton.disabled = true;
   const stopLab = runLab();
-  const { body, judgedCount } = buildRequest(messages, subjects);
 
   try {
     const timedAsk = async () => {
@@ -114,7 +160,7 @@ async function judgeChat() {
     };
     const [{ response, ms }] = await Promise.all([timedAsk(), wait(MIN_LAB_MS)]);
     stopLab();
-    renderResults(readVerdicts(response.answers, subjects), {
+    renderResults(judged, readVerdicts(response.answers, judged), {
       judgedCount,
       ms,
       model: response.model,
@@ -128,63 +174,64 @@ async function judgeChat() {
     }
     showError(error.message);
   } finally {
-    judgeButton.disabled = false;
+    judgeButton.disabled = subjects().length < 2;
   }
 }
 
-function barRow(label, probability, color) {
+function barRow(label, probability) {
   const row = fromTemplate('bar-row');
-  row.style.setProperty('--identity', color);
   row.querySelector('.who').textContent = label;
   row.querySelector('.value').textContent = percent(probability);
   row.querySelector('.fill').dataset.width = percent(probability);
   return row;
 }
 
-function renderResults({ culprit, people }, meta) {
-  const culpritIndex = subjects.indexOf(culprit.choice);
-  const culpritName = $('culprit-name');
-  culpritName.textContent = culprit.choice;
-  culpritName.style.color = identityColor(culpritIndex);
-  $('culprit-stat').textContent =
-    `p = ${culprit.probabilities[culprit.choice].toFixed(2)} · confidence ${culprit.confidence.toFixed(2)}`;
-  $('culprit-bars').replaceChildren(
-    ...subjects.map((name, i) => barRow(name, culprit.probabilities[name] ?? 0, identityColor(i))),
-  );
+function renderResults(judged, { culprit, people }, meta) {
+  const suspect = people.find((p) => p.name === culprit.choice);
+  $('suspect-mascot').src = mascotOf(suspect.answers.type.choice);
+  $('suspect-name').textContent = culprit.choice;
+  $('suspect-stat').textContent =
+    `${TYPES[suspect.answers.type.choice].name} · p = ${culprit.probabilities[culprit.choice].toFixed(2)} · ` +
+    `confidence ${culprit.confidence.toFixed(2)}`;
+  $('suspect-bars').replaceChildren(...judged.map((name) => barRow(name, culprit.probabilities[name] ?? 0)));
 
-  $('cards').replaceChildren(...people.map((person, i) => personCard(person, i)));
+  $('plates').replaceChildren(...people.map(plate));
 
+  const evidence = meta.judgedCount === null ? 'raw transcript' : `n = ${meta.judgedCount} messages`;
   const cost = meta.cost === undefined ? '' : ` · $${meta.cost.toFixed(6)}`;
-  $('footnote').textContent =
-    `n = ${meta.judgedCount} messages · ${meta.model} · ${meta.ms} ms${cost} · ` +
-    'Not peer reviewed. Not reviewed at all.';
+  $('footnote').textContent = `${evidence} · ${meta.model} · ${meta.ms} ms${cost}`;
 
   results.hidden = false;
   results.scrollIntoView({ behavior: 'smooth', block: 'start' });
   animateIn();
 }
 
-function personCard({ name, answers }, index) {
-  const card = fromTemplate('card');
-  card.style.setProperty('--identity', identityColor(index));
-  card.style.animationDelay = `${index * 90}ms`;
-  card.querySelector('.name').textContent = name;
+function plate({ name, answers }, index) {
+  const card = fromTemplate('plate');
+  card.style.setProperty('--delay', `${index * 120}ms`);
 
-  const { archetype } = answers;
-  const kind = ARCHETYPES[archetype.choice];
-  card.querySelector('.archetype-name').textContent = kind.name;
-  card.querySelector('.species').textContent =
-    `${kind.species} · p = ${archetype.probabilities[archetype.choice].toFixed(2)}`;
+  const type = TYPES[answers.type.choice];
+  const img = card.querySelector('.plate-figure img');
+  img.src = mascotOf(answers.type.choice);
+  img.alt = type.name;
 
-  const index100 = menaceIndex(answers);
-  const severity = SEVERITY[severityOf(index100)];
-  card.querySelector('.menace-value').dataset.target = index100;
-  const badge = card.querySelector('.severity');
-  badge.style.setProperty('--severity', severity.color);
-  badge.textContent = severity.word;
+  card.querySelector('.plate-no').textContent = `Plate ${String(index + 1).padStart(2, '0')}`;
+  card.querySelector('.plate-name').textContent = name;
+  card.querySelector('.plate-type').append(
+    type.name,
+    Object.assign(document.createElement('small'), {
+      textContent: `p = ${answers.type.probabilities[answers.type.choice].toFixed(2)}`,
+    }),
+  );
+  card.querySelector('.plate-species').textContent = type.species;
+  card.querySelector('.plate-note').textContent = type.note;
 
-  card.querySelector('.traits').append(
-    ...Object.entries(TRAITS).map(([key, label]) => traitMeter(label, answers[key])),
+  const menace = menaceIndex(answers);
+  card.querySelector('.menace-value').dataset.target = menace;
+  card.querySelector('.stamp').textContent = SEVERITY[severityOf(menace)];
+
+  card.querySelector('.measures').append(
+    ...Object.entries(TRAITS).map(([key, label]) => scale(label, answers[key])),
   );
   card.querySelector('.findings').append(
     ...Object.entries(FINDINGS).map(([key, label]) => {
@@ -197,12 +244,13 @@ function personCard({ name, answers }, index) {
   return card;
 }
 
-function traitMeter(label, answer) {
-  const meter = fromTemplate('trait');
-  meter.querySelector('.trait-name').textContent = label;
-  meter.querySelector('.trait-confidence').textContent = `conf. ${answer.confidence.toFixed(2)}`;
+function scale(label, answer) {
+  const meter = fromTemplate('scale');
+  meter.style.setProperty('--segments', Object.keys(answer.legend).length - 1);
+  meter.querySelector('.scale-name').textContent = label;
+  meter.querySelector('.scale-confidence').textContent = `conf. ${answer.confidence.toFixed(2)}`;
   meter.querySelector('.fill').dataset.width = percent(normalisedScore(answer));
-  meter.querySelector('.trait-level').textContent = nearestLevel(answer);
+  meter.querySelector('.scale-level').textContent = nearestLevel(answer);
 
   if (answer.probabilities) {
     meter.querySelector('.track').dataset.tip = Object.entries(answer.legend)
@@ -232,6 +280,8 @@ function animateIn() {
   }
 }
 
+renderSpeciesStrip();
+
 chat.addEventListener('input', onChatChanged);
 
 chat.addEventListener('dragover', (event) => {
@@ -254,6 +304,13 @@ $('sample').addEventListener('click', () => {
 });
 
 judgeButton.addEventListener('click', judgeChat);
+
+namesForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  typedNames = [...new Set($('names').value.split(',').map((n) => n.trim()).filter(Boolean))];
+  spared.clear();
+  renderSubjects();
+});
 
 keyForm.addEventListener('submit', (event) => {
   event.preventDefault();

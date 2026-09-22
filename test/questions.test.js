@@ -24,3 +24,13 @@ test('keeps only the newest messages when the chat is too long', () => {
   assert.ok(judgedCount < messages.length);
   assert.equal(body.state.messages.at(-1).from, 'P9');
 });
+
+test('unrecognised formats are sent as raw text with the named participants', () => {
+  const raw = 'x'.repeat(60_000) + 'the end';
+  const { body, judgedCount } = buildRequest(raw, ['Ana', 'Ben']);
+
+  assert.equal(judgedCount, null);
+  assert.deepEqual(body.state.participants, ['Ana', 'Ben']);
+  assert.ok(body.state.transcript.endsWith('the end'));
+  assert.ok(body.state.transcript.length <= 50_000);
+});

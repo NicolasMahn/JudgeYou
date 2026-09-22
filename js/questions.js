@@ -5,22 +5,31 @@ export const MODEL = '~typesafe/jev-latest';
 const MAX_STATE_CHARS = 50_000;
 
 // Each extra person only adds questions, which Jev answers in parallel for
-// almost no extra time; the cap keeps the page readable, and 8 matches the
-// number of identity colors.
+// almost no extra time; the cap keeps the results page readable.
 export const MAX_SUBJECTS = 8;
 
+// Option keys match TYPES in presentation.js; the descriptions are what Jev
+// actually judges against, so they describe behaviour visible in text.
+const TYPE_CRITERIA = {
+  giga_chad: 'Unbothered and self-assured; short, decisive messages; never explains or apologises',
+  golden_retriever: 'Relentlessly enthusiastic and supportive; exclamation marks; happy about everything',
+  cat: 'Aloof; replies only when it suits them; ignores questions; occasional sass',
+  chaos_goblin: 'Random and unhinged; memes, derailing tangents, chaotic energy',
+  dragon: 'Dominates the chat and makes it about themselves; gets fiery when challenged',
+  owl: 'Know-it-all; corrects others, over-explains, cites facts',
+  sloth: 'Minimum effort; one-word replies, reactions, "k"',
+  mother_hen: 'Organises everyone; makes plans, sends reminders, collects money, herds the group',
+  troll: 'Provokes on purpose; contrarian bait; mocks others for fun',
+  drama_llama: 'Turns small things into a crisis; hurt feelings, guilt trips, "it\'s fine" when it is not',
+  mosquito: 'Small, persistent passive-aggressive jabs; sarcastic quotes and snide remarks',
+  npc: 'Generic, agreeable filler replies like "same", "lol", "haha"; no opinions of their own',
+};
+
 const PERSONAL_QUESTIONS = {
-  archetype: (name) => ({
+  type: (name) => ({
     type: 'choice',
-    instructions: `Which archetype fits ${name} best in this chat?`,
-    criteria: {
-      monologuer: 'Sends long or many messages, mostly about themselves',
-      ghost: 'Replies rarely, late, or with the bare minimum',
-      instigator: 'Provokes, stirs up conflict, or escalates',
-      peacemaker: 'Smooths things over and keeps everyone comfortable',
-      jester: 'Deflects with jokes, memes, or sarcasm',
-      organiser: 'Drives plans, logistics, and decisions',
-    },
+    instructions: `Which type describes how ${name} behaves in this chat?`,
+    criteria: TYPE_CRITERIA,
   }),
   passive_aggression: (name) => ({
     type: 'score',
@@ -90,12 +99,12 @@ function newestWithinLimit(messages) {
 }
 
 /**
- * Builds one Jev request that judges every subject at once. Question keys are
- * namespaced by subject index (`p0_drama`) so `readVerdicts` can split the
- * answers back out.
+ * Builds one Jev request that judges every subject at once. `chat` is either
+ * parsed messages or, when the format wasn't recognised, the raw text. Question
+ * keys are namespaced by subject index (`p0_drama`) so `readVerdicts` can split
+ * the answers back out.
  */
-export function buildRequest(messages, subjects) {
-  const judged = newestWithinLimit(messages);
+export function buildRequest(chat, subjects) {
   const questions = {
     [CULPRIT]: {
       type: 'choice',
@@ -110,6 +119,14 @@ export function buildRequest(messages, subjects) {
     }
   });
 
+  if (typeof chat === 'string') {
+    return {
+      judgedCount: null,
+      body: { model: MODEL, state: { participants: subjects, transcript: chat.slice(-MAX_STATE_CHARS) }, questions },
+    };
+  }
+
+  const judged = newestWithinLimit(chat);
   return {
     judgedCount: judged.length,
     body: {
