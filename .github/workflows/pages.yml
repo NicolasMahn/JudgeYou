@@ -1,0 +1,49 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: npm test
+
+      - name: Assemble the site
+        run: mkdir _site && cp -r index.html css js _site/
+
+      # With an OPENROUTER_KEY secret, the site works out of the box; the key
+      # is then readable by every visitor, so use a dedicated, credit-capped
+      # one. Without it, visitors are asked for their own key.
+      - name: Embed the OpenRouter key, if configured
+        env:
+          OPENROUTER_KEY: ${{ secrets.OPENROUTER_KEY }}
+        run: |
+          if [ -n "$OPENROUTER_KEY" ]; then
+            printf "export const OPENROUTER_KEY = '%s';\n" "$OPENROUTER_KEY" > _site/js/key.js
+          fi
+
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v5

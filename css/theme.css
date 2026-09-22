@@ -1,0 +1,38 @@
+/* The only place raw color values live. The site is dark-only by design. */
+:root {
+  color-scheme: dark;
+
+  --page: #0d0d0d;
+  --surface-1: #1a1a19;
+  --surface-2: #232321;
+  --text-primary: #ffffff;
+  --text-secondary: #c3c2b7;
+  --text-muted: #898781;
+  --gridline: #2c2c2a;
+  --baseline: #383835;
+  --border: rgba(255, 255, 255, 0.1);
+
+  /* Identity: one per judged person, in this fixed order. Validated as a set
+     against --surface-1 for color-vision deficiencies. */
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
+  --series-5: #d55181;
+  --series-6: #008300;
+  --series-7: #9085e9;
+  --series-8: #e66767;
+
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-critical: #d03b3b;
+
+  /* Brand glow for the hero and primary action only, never for data. */
+  --glow-a: #ff3d9a;
+  --glow-b: #7b5cff;
+  --glow-c: #00d1ff;
+
+  --font-display: 'Unbounded', system-ui, sans-serif;
+  --font-body: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
