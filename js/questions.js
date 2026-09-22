@@ -1,8 +1,16 @@
 export const MODEL = '~typesafe/jev-latest';
 
-// Jev's state limit is 32k tokens including the longest question. Keeping the
-// newest ~50k characters leaves generous room for that at ~4 chars per token.
-const MAX_STATE_CHARS = 50_000;
+// Jev allows 32k tokens for the state plus the longest question. Measured on
+// English, German-with-emoji and Japanese chats, one token is ~2.06 UTF-8
+// bytes of JSON state, so bytes / 2 slightly overestimates tokens. The budget
+// leaves room for the longest question.
+export const STATE_TOKEN_BUDGET = 29_000;
+const BYTES_PER_TOKEN = 2;
+const utf8 = new TextEncoder();
+
+function estimateTokens(value) {
+  return utf8.encode(JSON.stringify(value)).length / BYTES_PER_TOKEN;
+}
 
 // Each extra person only adds questions, which Jev answers in parallel for
 // almost no extra time; the cap keeps the results page readable.
@@ -87,24 +95,38 @@ const PERSONAL_QUESTIONS = {
 
 const CULPRIT = 'culprit';
 
-function newestWithinLimit(messages) {
+/** The newest messages whose state fits the token budget, oldest first. */
+function newestWithinBudget(messages, budget) {
   const kept = [];
-  let chars = 0;
+  let tokens = estimateTokens({ messages: [] });
   for (let i = messages.length - 1; i >= 0; i--) {
-    chars += messages[i].author.length + messages[i].text.length;
-    if (chars > MAX_STATE_CHARS) break;
-    kept.unshift(messages[i]);
+    const message = { from: messages[i].author, text: messages[i].text };
+    tokens += estimateTokens(message) + 1; // +1 for the separating comma
+    if (tokens > budget) break;
+    kept.unshift(message);
   }
   return kept;
 }
 
+/** The end of a raw transcript, cut so its state fits the token budget. */
+function tailWithinBudget(transcript, participants, budget) {
+  let tail = transcript;
+  let tokens = estimateTokens({ participants, transcript: tail });
+  while (tokens > budget) {
+    tail = tail.slice(Math.ceil(tail.length * (1 - (0.98 * budget) / tokens)));
+    tokens = estimateTokens({ participants, transcript: tail });
+  }
+  return tail;
+}
+
 /**
  * Builds one Jev request that judges every subject at once. `chat` is either
- * parsed messages or, when the format wasn't recognised, the raw text. Question
- * keys are namespaced by subject index (`p0_drama`) so `readVerdicts` can split
- * the answers back out.
+ * parsed messages or, when the format wasn't recognised, the raw text; either
+ * way only the newest part that fits `budget` tokens is sent. Question keys
+ * are namespaced by subject index (`p0_drama`) so `readVerdicts` can split the
+ * answers back out.
  */
-export function buildRequest(chat, subjects) {
+export function buildRequest(chat, subjects, budget = STATE_TOKEN_BUDGET) {
   const questions = {
     [CULPRIT]: {
       type: 'choice',
@@ -120,20 +142,19 @@ export function buildRequest(chat, subjects) {
   });
 
   if (typeof chat === 'string') {
+    const transcript = tailWithinBudget(chat, subjects, budget);
     return {
       judgedCount: null,
-      body: { model: MODEL, state: { participants: subjects, transcript: chat.slice(-MAX_STATE_CHARS) }, questions },
+      truncated: transcript.length < chat.length,
+      body: { model: MODEL, state: { participants: subjects, transcript }, questions },
     };
   }
 
-  const judged = newestWithinLimit(chat);
+  const messages = newestWithinBudget(chat, budget);
   return {
-    judgedCount: judged.length,
-    body: {
-      model: MODEL,
-      state: { messages: judged.map(({ author, text }) => ({ from: author, text })) },
-      questions,
-    },
+    judgedCount: messages.length,
+    truncated: messages.length < chat.length,
+    body: { model: MODEL, state: { messages }, questions },
   };
 }
 

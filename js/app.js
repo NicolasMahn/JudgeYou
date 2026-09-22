@@ -1,5 +1,5 @@
 import { parseChat, participantsOf } from './parse.js';
-import { buildRequest, readVerdicts, MAX_SUBJECTS } from './questions.js';
+import { buildRequest, readVerdicts, MAX_SUBJECTS, STATE_TOKEN_BUDGET } from './questions.js';
 import { askJev, findApiKey, forgetApiKey, isApiKey, rememberApiKey } from './jev.js';
 import { menaceIndex, nearestLevel, normalisedScore, severityOf } from './verdict.js';
 import { FINDINGS, SEVERITY, TRAITS, TYPES, mascotOf } from './presentation.js';
@@ -146,7 +146,7 @@ async function judgeChat() {
   }
 
   const judged = subjects();
-  const { body, judgedCount } = buildRequest(isRawMode() ? chat.value : messages, judged);
+  const evidence = isRawMode() ? chat.value : messages;
   keyForm.hidden = true;
   results.hidden = true;
   judgeButton.disabled = true;
@@ -155,13 +155,15 @@ async function judgeChat() {
   try {
     const timedAsk = async () => {
       const started = performance.now();
-      const response = await askJev(apiKey, body);
-      return { response, ms: Math.round(performance.now() - started) };
+      const { request, response } = await askWithinLimit(apiKey, evidence, judged);
+      return { request, response, ms: Math.round(performance.now() - started) };
     };
-    const [{ response, ms }] = await Promise.all([timedAsk(), wait(MIN_LAB_MS)]);
+    const [{ request, response, ms }] = await Promise.all([timedAsk(), wait(MIN_LAB_MS)]);
     stopLab();
     renderResults(judged, readVerdicts(response.answers, judged), {
-      judgedCount,
+      judgedCount: request.judgedCount,
+      totalCount: isRawMode() ? null : messages.length,
+      truncated: request.truncated,
       ms,
       model: response.model,
       cost: response.usage?.cost,
@@ -175,6 +177,21 @@ async function judgeChat() {
     showError(error.message);
   } finally {
     judgeButton.disabled = subjects().length < 2;
+  }
+}
+
+/**
+ * The token estimate is deliberately pessimistic, but an unusual chat can
+ * still exceed Jev's limit; then retry once with a much smaller slice.
+ */
+async function askWithinLimit(apiKey, evidence, judged) {
+  let request = buildRequest(evidence, judged);
+  try {
+    return { request, response: await askJev(apiKey, request.body) };
+  } catch (error) {
+    if (error.type !== 'max_tokens_exceeded') throw error;
+    request = buildRequest(evidence, judged, STATE_TOKEN_BUDGET / 2);
+    return { request, response: await askJev(apiKey, request.body) };
   }
 }
 
@@ -197,7 +214,12 @@ function renderResults(judged, { culprit, people }, meta) {
 
   $('plates').replaceChildren(...people.map(plate));
 
-  const evidence = meta.judgedCount === null ? 'raw transcript' : `n = ${meta.judgedCount} messages`;
+  const evidence =
+    meta.judgedCount === null
+      ? `${meta.truncated ? 'newest part of the ' : ''}raw transcript`
+      : meta.truncated
+        ? `newest ${meta.judgedCount} of ${meta.totalCount} messages (older ones exceed Jev’s limit)`
+        : `n = ${meta.judgedCount} messages`;
   const cost = meta.cost === undefined ? '' : ` · $${meta.cost.toFixed(6)}`;
   $('footnote').textContent = `${evidence} · ${meta.model} · ${meta.ms} ms${cost}`;
 

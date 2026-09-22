@@ -50,6 +50,8 @@ export async function askJev(apiKey, body) {
     const reason = payload?.error?.message ?? payload?.detail?.message ?? response.statusText;
     const error = new Error(`Jev refused to testify (${response.status}): ${reason}`);
     error.status = response.status;
+    // OpenRouter wraps TypeSafe's error JSON inside its message string.
+    error.type = String(reason).match(/"error_type":\s*"(\w+)"/)?.[1];
     throw error;
   }
   return payload;
