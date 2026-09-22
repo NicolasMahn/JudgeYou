@@ -1,6 +1,6 @@
 import { parseChat, participantsOf } from './parse.js';
 import { buildRequest, readVerdicts, MAX_SUBJECTS } from './questions.js';
-import { askJev, findApiKey, forgetApiKey, rememberApiKey } from './jev.js';
+import { askJev, findApiKey, forgetApiKey, isApiKey, rememberApiKey } from './jev.js';
 import { menaceIndex, nearestLevel, normalisedScore, severityOf } from './verdict.js';
 import { FINDINGS, SEVERITY, TRAITS, TYPES, mascotOf } from './presentation.js';
 import { SAMPLE_CHAT } from './sample.js';
@@ -314,6 +314,11 @@ namesForm.addEventListener('submit', (event) => {
 
 keyForm.addEventListener('submit', (event) => {
   event.preventDefault();
-  rememberApiKey($('key').value.trim());
+  const key = $('key').value.trim();
+  if (!isApiKey(key)) {
+    showError('That doesn’t look like an OpenRouter key. It should start with “sk-or-”.');
+    return;
+  }
+  rememberApiKey(key);
   judgeChat();
 });

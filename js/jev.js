@@ -3,13 +3,22 @@
 const ENDPOINT = 'https://openrouter.ai/api/alpha/decisions';
 const STORAGE_KEY = 'judgeyou.openrouterKey';
 
+// Anything else would end up in a request header, which only accepts ASCII;
+// pasting a chat into the key field used to make fetch throw.
+const KEY_SHAPE = /^sk-or-[\w-]+$/;
+
+export function isApiKey(value) {
+  return KEY_SHAPE.test(value);
+}
+
 /**
  * A key typed into the page wins; otherwise fall back to the optional,
  * git-ignored `key.js`, which only exists in local and deployed builds.
  */
 export async function findApiKey() {
   const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored) return stored;
+  if (stored && isApiKey(stored)) return stored;
+  if (stored) forgetApiKey();
   try {
     return (await import('./key.js')).OPENROUTER_KEY;
   } catch {
