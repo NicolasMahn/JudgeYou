@@ -1,7 +1,7 @@
 import { parseChat, participantsOf } from './parse.js';
 import { buildRequest, readVerdicts, MAX_SUBJECTS, STATE_TOKEN_BUDGET } from './questions.js';
 import { askJev, findApiKey, forgetApiKey, isApiKey, rememberApiKey } from './jev.js';
-import { menaceIndex, nearestLevel, normalisedScore, severityOf } from './verdict.js';
+import { assignTypes, menaceIndex, nearestLevel, normalisedScore, severityOf } from './verdict.js';
 import { FINDINGS, SEVERITY, TRAITS, TYPES, mascotOf } from './presentation.js';
 import { SAMPLE_CHAT } from './sample.js';
 
@@ -204,15 +204,16 @@ function barRow(label, probability) {
 }
 
 function renderResults(judged, { culprit, people }, meta) {
-  const suspect = people.find((p) => p.name === culprit.choice);
-  $('suspect-mascot').src = mascotOf(suspect.answers.type.choice);
+  const types = assignTypes(people.map((p) => p.answers.type));
+  const suspectType = types[people.findIndex((p) => p.name === culprit.choice)].type;
+  $('suspect-mascot').src = mascotOf(suspectType);
   $('suspect-name').textContent = culprit.choice;
   $('suspect-stat').textContent =
-    `${TYPES[suspect.answers.type.choice].name} · p = ${culprit.probabilities[culprit.choice].toFixed(2)} · ` +
+    `${TYPES[suspectType].name} · p = ${culprit.probabilities[culprit.choice].toFixed(2)} · ` +
     `confidence ${culprit.confidence.toFixed(2)}`;
   $('suspect-bars').replaceChildren(...judged.map((name) => barRow(name, culprit.probabilities[name] ?? 0)));
 
-  $('plates').replaceChildren(...people.map(plate));
+  $('plates').replaceChildren(...people.map((person, i) => plate(person, i, types[i])));
 
   const evidence =
     meta.judgedCount === null
@@ -228,13 +229,13 @@ function renderResults(judged, { culprit, people }, meta) {
   animateIn();
 }
 
-function plate({ name, answers }, index) {
+function plate({ name, answers }, index, assigned) {
   const card = fromTemplate('plate');
   card.style.setProperty('--delay', `${index * 120}ms`);
 
-  const type = TYPES[answers.type.choice];
+  const type = TYPES[assigned.type];
   const img = card.querySelector('.plate-figure img');
-  img.src = mascotOf(answers.type.choice);
+  img.src = mascotOf(assigned.type);
   img.alt = type.name;
 
   card.querySelector('.plate-no').textContent = `Plate ${String(index + 1).padStart(2, '0')}`;
@@ -242,7 +243,7 @@ function plate({ name, answers }, index) {
   card.querySelector('.plate-type').append(
     type.name,
     Object.assign(document.createElement('small'), {
-      textContent: `p = ${answers.type.probabilities[answers.type.choice].toFixed(2)}`,
+      textContent: `p = ${assigned.probability.toFixed(2)}`,
     }),
   );
   card.querySelector('.plate-species').textContent = type.species;

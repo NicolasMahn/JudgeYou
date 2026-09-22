@@ -17,26 +17,29 @@ function estimateTokens(value) {
 export const MAX_SUBJECTS = 8;
 
 // Option keys match TYPES in presentation.js; the descriptions are what Jev
-// actually judges against, so they describe behaviour visible in text.
+// actually judges against. Each names a defining excess rather than a common
+// behaviour: everyday chats are mostly logistics, and with softer wording
+// ("makes plans", "short messages") almost everyone became a Mother Hen or a
+// Giga Chad.
 const TYPE_CRITERIA = {
-  giga_chad: 'Unbothered and self-assured; short, decisive messages; never explains or apologises',
-  golden_retriever: 'Relentlessly enthusiastic and supportive; exclamation marks; happy about everything',
-  cat: 'Aloof; replies only when it suits them; ignores questions; occasional sass',
-  chaos_goblin: 'Random and unhinged; memes, derailing tangents, chaotic energy',
-  dragon: 'Dominates the chat and makes it about themselves; gets fiery when challenged',
-  owl: 'Know-it-all; corrects others, over-explains, cites facts',
-  sloth: 'Minimum effort; one-word replies, reactions, "k"',
-  mother_hen: 'Organises everyone; makes plans, sends reminders, collects money, herds the group',
-  troll: 'Provokes on purpose; contrarian bait; mocks others for fun',
-  drama_llama: 'Turns small things into a crisis; hurt feelings, guilt trips, "it\'s fine" when it is not',
-  mosquito: 'Small, persistent passive-aggressive jabs; sarcastic quotes and snide remarks',
-  npc: 'Generic, agreeable filler replies like "same", "lol", "haha"; no opinions of their own',
+  giga_chad: 'Supremely confident and unbothered; blunt one-liners; never explains, apologises or seeks approval',
+  golden_retriever: 'Overflowing enthusiasm and affection; exclamation marks and hearts; cheers everyone on',
+  cat: 'Aloof and selective; ignores questions they do not feel like answering; replies on their own terms, with sass',
+  chaos_goblin: 'Random and unhinged; memes, absurd tangents, derails serious topics',
+  dragon: 'Domineering; makes everything about themselves, demands attention, lashes out when challenged',
+  owl: 'Know-it-all; corrects people, lectures, adds facts nobody asked for',
+  sloth: 'Barely participates; one-word answers and emoji reactions; has to be chased for a reply',
+  mother_hen: 'Fusses over everyone far beyond what is needed; nagging reminders, checks on how people are, keeps lists, collects money',
+  troll: 'Provokes on purpose; hot takes, bait, mocks others for fun',
+  drama_llama: 'Turns small things into a crisis about their feelings; guilt trips, self-pity, "it\'s fine" when it is not',
+  mosquito: 'Passive-aggressive; small snide jabs, sarcastic smileys, backhanded compliments',
+  npc: 'No opinions of their own; agrees with whoever spoke last; generic filler like "same", "lol", "haha"',
 };
 
 const PERSONAL_QUESTIONS = {
   type: (name) => ({
     type: 'choice',
-    instructions: `Which type describes how ${name} behaves in this chat?`,
+    instructions: `Which type best captures what makes ${name} stand out compared with the other people in this chat? Judge ${name}'s own messages.`,
     criteria: TYPE_CRITERIA,
   }),
   passive_aggression: (name) => ({
