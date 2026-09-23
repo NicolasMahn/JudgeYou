@@ -1,90 +1,58 @@
-// How judgments look: names, flavour text, mascots, and which theme token
-// carries which meaning. Components read from here instead of deciding.
+// How judgments look: names, flavour text, mascots and number formats.
+// Components read from here instead of deciding. Wording lives in locales/.
+import { lang, t } from './i18n.js';
 
-/** Keys match the Choice options in questions.js. */
-export const TYPES = {
-  giga_chad: {
-    name: 'The Giga Chad',
-    species: 'Homo gigachadensis',
-    note: 'Has never once typed “sorry for the long message”.',
-  },
-  golden_retriever: {
-    name: 'The Golden Retriever',
-    species: 'Canis entusiasticus',
-    note: 'Greets every message like the best news of the year.',
-  },
-  cat: {
-    name: 'The Cat',
-    species: 'Felis indifferens',
-    note: 'Will answer eventually, if the question is interesting enough.',
-  },
-  chaos_goblin: {
-    name: 'The Chaos Goblin',
-    species: 'Goblinus chaoticus',
-    note: 'Last seen dropping a meme into a serious conversation.',
-  },
-  dragon: {
-    name: 'The Dragon',
-    species: 'Draco attentionis',
-    note: 'Guards the conversation like a hoard. Do not approach the hoard.',
-  },
-  owl: {
-    name: 'The Owl',
-    species: 'Strix pedantica',
-    note: '“Actually” is its favourite way to begin a sentence.',
-  },
-  sloth: {
-    name: 'The Sloth',
-    species: 'Bradypus minimus',
-    note: 'Communicates chiefly through thumbs-up and single letters.',
-  },
-  mother_hen: {
-    name: 'The Mother Hen',
-    species: 'Gallus organizatrix',
-    note: 'Keeps the plan, the list, the money and everyone’s patience.',
-  },
-  troll: {
-    name: 'The Troll',
-    species: 'Trollus provocans',
-    note: 'Lives under the thread and charges a toll in attention.',
-  },
-  drama_llama: {
-    name: 'The Drama Llama',
-    species: 'Lama theatralis',
-    note: 'Every scheduling conflict is a tragedy in five acts.',
-  },
-  mosquito: {
-    name: 'The Mosquito',
-    species: 'Culex passivoaggressivus',
-    note: 'Small and persistent. You only notice the bite afterwards.',
-  },
-  npc: {
-    name: 'The NPC',
-    species: 'Homo nonludens',
-    note: 'Dialogue options appear limited to “same” and “lol”.',
-  },
+/** Keys match the Choice options in questions.js. Latin needs no translation. */
+export const SPECIES = {
+  giga_chad: 'Homo gigachadensis',
+  golden_retriever: 'Canis entusiasticus',
+  cat: 'Felis indifferens',
+  chaos_goblin: 'Goblinus chaoticus',
+  dragon: 'Draco attentionis',
+  owl: 'Strix pedantica',
+  sloth: 'Bradypus minimus',
+  mother_hen: 'Gallus organizatrix',
+  troll: 'Trollus provocans',
+  drama_llama: 'Lama theatralis',
+  mosquito: 'Culex passivoaggressivus',
+  npc: 'Homo nonludens',
 };
+
+export const TYPE_KEYS = Object.keys(SPECIES);
+
+export const typeName = (type) => t(`types.${type}.name`);
+export const typeNote = (type) => t(`types.${type}.note`);
 
 export function mascotOf(type) {
   return `img/types/${type}.webp`;
 }
 
-export const TRAITS = {
-  passive_aggression: 'Passive aggression',
-  main_character: 'Main character syndrome',
-  drama: 'Drama output',
-  effort: 'Effort',
-};
+export const TRAIT_KEYS = ['passive_aggression', 'main_character', 'drama', 'effort'];
+export const FINDING_KEYS = ['started_it', 'leaves_on_read', 'secretly_right'];
 
-export const FINDINGS = {
-  started_it: 'Started it',
-  leaves_on_read: 'Dodges questions',
-  secretly_right: 'Secretly right',
-};
+// The stamp word carries the severity; the stamp colour is the one accent.
+export const severityLabel = (severity) => t(`severity.${severity}`);
 
-// The stamp word carries the meaning; the stamp colour is the one accent.
-export const SEVERITY = {
-  low: 'Harmless',
-  medium: 'Under observation',
-  high: 'Certified menace',
-};
+export const percent = (p) => `${Math.round(p * 100)}%`;
+
+export function formatNumber(value) {
+  return new Intl.NumberFormat(lang, { maximumFractionDigits: 1 }).format(value);
+}
+
+/** "40 s", "12 min", "2 h 5 min", in the page's language. */
+export function formatDuration(ms) {
+  const unit = (value, unit) => new Intl.NumberFormat(lang, { style: 'unit', unit, unitDisplay: 'short' }).format(value);
+  const minutes = Math.round(ms / 60_000);
+  if (minutes < 1) return unit(Math.round(ms / 1000), 'second');
+  if (minutes < 60) return unit(minutes, 'minute');
+  const rest = minutes % 60;
+  return rest ? `${unit(Math.floor(minutes / 60), 'hour')} ${unit(rest, 'minute')}` : unit(minutes / 60, 'hour');
+}
+
+/** The one-line proof behind a record, e.g. "median reply 2 h · n = 14". */
+export function recordDetail({ key, stats }) {
+  const detail = `records.${key}.detail`;
+  if (key === 'slowest' || key === 'fastest') return t(detail, { time: formatDuration(stats.reply.median), n: stats.reply.n });
+  if (key === 'wordiest') return t(detail, { words: formatNumber(stats.medianWords), n: stats.messages });
+  return t(detail, stats.starts);
+}

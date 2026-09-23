@@ -13,11 +13,6 @@ export function normalisedScore(answer) {
   return answer.score / topLevel;
 }
 
-/** The legend entry closest to the (fractional) score. */
-export function nearestLevel(answer) {
-  return answer.legend[Math.round(answer.score)];
-}
-
 /** Returns 0–100. */
 export function menaceIndex(answers) {
   const total =

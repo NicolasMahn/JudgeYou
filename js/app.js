@@ -1,17 +1,27 @@
 import { parseChat, participantsOf } from './parse.js';
 import { buildRequest, readVerdicts, MAX_SUBJECTS, STATE_TOKEN_BUDGET } from './questions.js';
 import { askJev, findApiKey, forgetApiKey, isApiKey, rememberApiKey } from './jev.js';
-import { assignTypes, menaceIndex, nearestLevel, normalisedScore, severityOf } from './verdict.js';
-import { FINDINGS, SEVERITY, TRAITS, TYPES, mascotOf } from './presentation.js';
+import { assignTypes, menaceIndex, normalisedScore, severityOf } from './verdict.js';
+import { chatStats, recordsOf } from './stats.js';
+import { FileError, readChatFile } from './files.js';
+import { openCard } from './card.js';
+import { LANGUAGES, lang, setLanguage, t, translatePage } from './i18n.js';
+import {
+  FINDING_KEYS,
+  TRAIT_KEYS,
+  TYPE_KEYS,
+  SPECIES,
+  formatDuration,
+  formatNumber,
+  mascotOf,
+  percent,
+  recordDetail,
+  severityLabel,
+  typeName,
+  typeNote,
+} from './presentation.js';
 import { SAMPLE_CHAT } from './sample.js';
 
-const LAB_LINES = [
-  'Establishing chain of custody…',
-  'Measuring emoji-to-sincerity ratio…',
-  'Counting questions left on read…',
-  'Consulting the field guide…',
-  'Asking Jev…',
-];
 const LAB_LINE_MS = 340;
 const LAB_FLICKER_MS = 110;
 
@@ -28,8 +38,6 @@ const errorBox = $('error');
 const lab = $('lab');
 const results = $('results');
 
-const typeKeys = Object.keys(TYPES);
-
 // When the format isn't recognised, the user names the people and Jev reads
 // the raw text instead of parsed messages.
 let messages = [];
@@ -37,7 +45,9 @@ let detected = [];
 let typedNames = [];
 const spared = new Set();
 
-const percent = (p) => `${Math.round(p * 100)}%`;
+// Kept so a language switch can redraw the results without asking Jev again.
+let lastVerdict = null;
+
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function fromTemplate(id) {
@@ -53,12 +63,24 @@ function renderSpeciesStrip() {
     img.alt = '';
     img.loading = 'lazy';
     const name = document.createElement('span');
-    name.textContent = TYPES[key].name.replace(/^The /, '');
+    name.textContent = typeName(key);
     item.append(img, name);
     return item;
   };
   // Two copies so the drifting strip loops without a seam.
-  $('species-track').append(...typeKeys.map(specimen), ...typeKeys.map(specimen));
+  $('species-track').replaceChildren(...TYPE_KEYS.map(specimen), ...TYPE_KEYS.map(specimen));
+}
+
+function renderLanguagePicker() {
+  const picker = $('language');
+  picker.replaceChildren(...Object.entries(LANGUAGES).map(([code, name]) => new Option(name, code, false, code === lang)));
+  picker.addEventListener('change', () => {
+    setLanguage(picker.value);
+    translatePage();
+    renderSpeciesStrip();
+    renderSubjects();
+    if (lastVerdict) renderResults(lastVerdict, { scroll: false });
+  });
 }
 
 function isRawMode() {
@@ -81,6 +103,16 @@ function onChatChanged() {
   renderSubjects();
 }
 
+async function loadFile(file) {
+  errorBox.hidden = true;
+  try {
+    chat.value = await readChatFile(file);
+    onChatChanged();
+  } catch (error) {
+    showError(error instanceof FileError ? t(`errors.${error.message}`) : error.message);
+  }
+}
+
 function renderSubjects() {
   const box = $('subjects');
   box.replaceChildren(
@@ -90,7 +122,7 @@ function renderSubjects() {
       chip.className = 'chip';
       chip.textContent = name;
       chip.setAttribute('aria-pressed', String(!spared.has(name)));
-      chip.title = spared.has(name) ? 'Judge them after all' : 'Spare them';
+      chip.title = spared.has(name) ? t('unspare') : t('spare');
       chip.addEventListener('click', () => {
         spared.has(name) ? spared.delete(name) : spared.add(name);
         renderSubjects();
@@ -100,7 +132,7 @@ function renderSubjects() {
   );
 
   const unjudged = candidates().length - spared.size - subjects().length;
-  if (unjudged > 0) box.append(`+${unjudged} quieter ones spared`);
+  if (unjudged > 0) box.append(t('spared', { n: unjudged }));
   judgeButton.disabled = subjects().length < 2;
 }
 
@@ -112,19 +144,20 @@ function showError(message) {
 function runLab() {
   const log = $('lab-log');
   const specimen = $('lab-specimen');
+  const lines = t('lab');
   log.replaceChildren();
   lab.hidden = false;
 
   let line = 0;
   const addLine = () => {
     const p = document.createElement('p');
-    p.textContent = LAB_LINES[line++ % LAB_LINES.length];
+    p.textContent = lines[line++ % lines.length];
     log.append(p);
     if (log.children.length > 4) log.firstElementChild.remove();
   };
   let frame = 0;
   const flicker = () => {
-    specimen.src = mascotOf(typeKeys[frame++ % typeKeys.length]);
+    specimen.src = mascotOf(TYPE_KEYS[frame++ % TYPE_KEYS.length]);
   };
 
   addLine();
@@ -146,7 +179,8 @@ async function judgeChat() {
   }
 
   const judged = subjects();
-  const evidence = isRawMode() ? chat.value : messages;
+  const rawMode = isRawMode();
+  const evidence = rawMode ? chat.value : messages;
   keyForm.hidden = true;
   results.hidden = true;
   judgeButton.disabled = true;
@@ -160,21 +194,28 @@ async function judgeChat() {
     };
     const [{ request, response, ms }] = await Promise.all([timedAsk(), wait(MIN_LAB_MS)]);
     stopLab();
-    renderResults(judged, readVerdicts(response.answers, judged), {
-      judgedCount: request.judgedCount,
-      totalCount: isRawMode() ? null : messages.length,
-      truncated: request.truncated,
-      ms,
-      model: response.model,
-      cost: response.usage?.cost,
-    });
+    lastVerdict = {
+      judged,
+      ...readVerdicts(response.answers, judged),
+      // Counted over the whole chat, not just the part Jev could read.
+      stats: rawMode ? null : chatStats(messages),
+      meta: {
+        judgedCount: request.judgedCount,
+        totalCount: rawMode ? null : messages.length,
+        truncated: request.truncated,
+        ms,
+        model: response.model,
+        cost: response.usage?.cost,
+      },
+    };
+    renderResults(lastVerdict);
   } catch (error) {
     stopLab();
     if (error.status === 401) {
       forgetApiKey();
       keyForm.hidden = false;
     }
-    showError(error.message);
+    showError(error.status ? t('errors.jev', { status: error.status, reason: error.reason }) : error.message);
   } finally {
     judgeButton.disabled = subjects().length < 2;
   }
@@ -203,81 +244,123 @@ function barRow(label, probability) {
   return row;
 }
 
-function renderResults(judged, { culprit, people }, meta) {
+function renderResults({ judged, culprit, people, stats, meta }, { scroll = true } = {}) {
   const types = assignTypes(people.map((p) => p.answers.type));
   const suspectType = types[people.findIndex((p) => p.name === culprit.choice)].type;
   $('suspect-mascot').src = mascotOf(suspectType);
   $('suspect-name').textContent = culprit.choice;
-  $('suspect-stat').textContent =
-    `${TYPES[suspectType].name} · p = ${culprit.probabilities[culprit.choice].toFixed(2)} · ` +
-    `confidence ${culprit.confidence.toFixed(2)}`;
+  $('suspect-stat').textContent = t('suspectStat', {
+    type: typeName(suspectType),
+    p: culprit.probabilities[culprit.choice].toFixed(2),
+    confidence: culprit.confidence.toFixed(2),
+  });
   $('suspect-bars').replaceChildren(...judged.map((name) => barRow(name, culprit.probabilities[name] ?? 0)));
 
-  $('plates').replaceChildren(...people.map((person, i) => plate(person, i, types[i])));
+  const records = stats ? recordsOf(stats, judged) : [];
+  $('records').replaceChildren(...records.map(record));
+  $('records').hidden = !records.length;
+
+  $('plates').replaceChildren(...people.map((person, i) => plate(person, i, types[i], stats?.get(person.name))));
 
   const evidence =
     meta.judgedCount === null
-      ? `${meta.truncated ? 'newest part of the ' : ''}raw transcript`
+      ? t(meta.truncated ? 'evidenceRawTruncated' : 'evidenceRaw')
       : meta.truncated
-        ? `newest ${meta.judgedCount} of ${meta.totalCount} messages (older ones exceed Jev’s limit)`
-        : `n = ${meta.judgedCount} messages`;
+        ? t('evidenceTruncated', { n: meta.judgedCount, total: meta.totalCount })
+        : t('evidenceAll', { n: meta.judgedCount });
   const cost = meta.cost === undefined ? '' : ` · $${meta.cost.toFixed(6)}`;
   $('footnote').textContent = `${evidence} · ${meta.model} · ${meta.ms} ms${cost}`;
 
+  $('share').onclick = () =>
+    openCard({
+      suspect: culprit.choice,
+      people: people.map(({ name, answers }, i) => {
+        const menace = menaceIndex(answers);
+        return { name, type: types[i].type, menace, severity: severityOf(menace) };
+      }),
+      records: records.map((r) => ({ key: r.key, name: r.name, detail: recordDetail(r) })),
+    });
+
   results.hidden = false;
-  results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  if (scroll) results.scrollIntoView({ behavior: 'smooth', block: 'start' });
   animateIn();
 }
 
-function plate({ name, answers }, index, assigned) {
+function record(entry) {
+  const box = document.createElement('div');
+  box.className = 'record';
+  const title = Object.assign(document.createElement('span'), { textContent: t(`records.${entry.key}.title`) });
+  const name = Object.assign(document.createElement('strong'), { textContent: entry.name });
+  const detail = Object.assign(document.createElement('small'), { textContent: recordDetail(entry) });
+  box.append(title, name, detail);
+  return box;
+}
+
+function plate({ name, answers }, index, assigned, counts) {
   const card = fromTemplate('plate');
   card.style.setProperty('--delay', `${index * 120}ms`);
 
-  const type = TYPES[assigned.type];
   const img = card.querySelector('.plate-figure img');
   img.src = mascotOf(assigned.type);
-  img.alt = type.name;
+  img.alt = typeName(assigned.type);
 
-  card.querySelector('.plate-no').textContent = `Plate ${String(index + 1).padStart(2, '0')}`;
+  card.querySelector('.plate-no').textContent = t('plate', { n: String(index + 1).padStart(2, '0') });
+  card.querySelector('.menace-label').textContent = t('menace');
   card.querySelector('.plate-name').textContent = name;
   card.querySelector('.plate-type').append(
-    type.name,
+    typeName(assigned.type),
     Object.assign(document.createElement('small'), {
       textContent: `p = ${assigned.probability.toFixed(2)}`,
     }),
   );
-  card.querySelector('.plate-species').textContent = type.species;
-  card.querySelector('.plate-note').textContent = type.note;
+  card.querySelector('.plate-species').textContent = SPECIES[assigned.type];
+  card.querySelector('.plate-note').textContent = typeNote(assigned.type);
 
   const menace = menaceIndex(answers);
   card.querySelector('.menace-value').dataset.target = menace;
-  card.querySelector('.stamp').textContent = SEVERITY[severityOf(menace)];
+  card.querySelector('.stamp').textContent = severityLabel(severityOf(menace));
 
-  card.querySelector('.measures').append(
-    ...Object.entries(TRAITS).map(([key, label]) => scale(label, answers[key])),
-  );
-  card.querySelector('.findings').append(
-    ...Object.entries(FINDINGS).map(([key, label]) => {
-      const finding = fromTemplate('finding');
-      finding.querySelector('dt').textContent = label;
-      finding.querySelector('dd').textContent = percent(answers[key].noul);
-      return finding;
-    }),
-  );
+  card.querySelector('.measures').append(...TRAIT_KEYS.map((key) => scale(key, answers[key])));
+
+  const counted = card.querySelector('.counted');
+  if (counts) {
+    counted.append(
+      fact(t('counted.messages'), formatNumber(counts.messages)),
+      fact(t('counted.words'), formatNumber(counts.medianWords), t('counted.wordsDefinition')),
+      fact(
+        t('counted.reply'),
+        counts.reply ? formatDuration(counts.reply.median) : '–',
+        `${t('counted.replyDefinition')}${counts.reply ? ` (n = ${counts.reply.n})` : ''}`,
+      ),
+    );
+  } else {
+    counted.remove();
+  }
+  card.querySelector('.findings').append(...FINDING_KEYS.map((key) => fact(t(`findings.${key}`), percent(answers[key].noul))));
   return card;
 }
 
-function scale(label, answer) {
+function fact(label, value, definition) {
+  const item = fromTemplate('finding');
+  item.querySelector('dt').textContent = label;
+  item.querySelector('dd').textContent = value;
+  if (definition) item.title = definition;
+  return item;
+}
+
+function scale(key, answer) {
+  const levels = t(`levels.${key}`);
   const meter = fromTemplate('scale');
-  meter.style.setProperty('--segments', Object.keys(answer.legend).length - 1);
-  meter.querySelector('.scale-name').textContent = label;
-  meter.querySelector('.scale-confidence').textContent = `conf. ${answer.confidence.toFixed(2)}`;
+  meter.style.setProperty('--segments', levels.length - 1);
+  meter.querySelector('.scale-name').textContent = t(`traits.${key}`);
+  meter.querySelector('.scale-confidence').textContent = t('confidence', { c: answer.confidence.toFixed(2) });
   meter.querySelector('.fill').dataset.width = percent(normalisedScore(answer));
-  meter.querySelector('.scale-level').textContent = nearestLevel(answer);
+  meter.querySelector('.scale-level').textContent = levels[Math.round(answer.score)];
 
   if (answer.probabilities) {
-    meter.querySelector('.track').dataset.tip = Object.entries(answer.legend)
-      .map(([level, text]) => `${percent(answer.probabilities[level] ?? 0).padStart(4)}  ${text}`)
+    // Jev's legend is in English; its levels are in the same order as ours.
+    meter.querySelector('.track').dataset.tip = Object.keys(answer.legend)
+      .map((level, i) => `${percent(answer.probabilities[level] ?? 0).padStart(4)}  ${levels[i]}`)
       .join('\n');
   }
   return meter;
@@ -303,6 +386,8 @@ function animateIn() {
   }
 }
 
+translatePage();
+renderLanguagePicker();
 renderSpeciesStrip();
 
 chat.addEventListener('input', onChatChanged);
@@ -312,13 +397,18 @@ chat.addEventListener('dragover', (event) => {
   chat.classList.add('dragging');
 });
 chat.addEventListener('dragleave', () => chat.classList.remove('dragging'));
-chat.addEventListener('drop', async (event) => {
+chat.addEventListener('drop', (event) => {
   event.preventDefault();
   chat.classList.remove('dragging');
   const file = event.dataTransfer.files[0];
-  if (!file) return;
-  chat.value = await file.text();
-  onChatChanged();
+  if (file) loadFile(file);
+});
+
+$('open-file').addEventListener('click', () => $('file').click());
+$('file').addEventListener('change', () => {
+  const file = $('file').files[0];
+  $('file').value = '';
+  if (file) loadFile(file);
 });
 
 $('sample').addEventListener('click', () => {
@@ -339,7 +429,7 @@ keyForm.addEventListener('submit', (event) => {
   event.preventDefault();
   const key = $('key').value.trim();
   if (!isApiKey(key)) {
-    showError('That doesn’t look like an OpenRouter key. It should start with “sk-or-”.');
+    showError(t('errors.badKey'));
     return;
   }
   rememberApiKey(key);

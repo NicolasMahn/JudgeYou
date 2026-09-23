@@ -19,17 +19,15 @@
   <body>
     <header class="masthead">
       <strong>JudgeYou</strong>
-      <span>A field guide to the people in your group chat</span>
-      <span>Vol. I · 2026</span>
+      <span data-i18n="tagline">A field guide to the people in your group chat</span>
+      <span data-i18n="volume">Vol. I · 2026</span>
+      <select id="language" data-i18n-attr="aria-label: language"></select>
     </header>
 
     <main>
       <section class="hero">
-        <h1>Who is the <em>problem</em> in your group chat?</h1>
-        <p class="lede">
-          Paste the chat. Jev, a model that answers in calibrated probabilities instead of
-          opinions, sorts everyone into one of twelve known species.
-        </p>
+        <h1 data-i18n-html="hero">Who is the <em>problem</em> in your group chat?</h1>
+        <p class="lede" data-i18n="lede"></p>
       </section>
 
       <div class="species-strip" aria-hidden="true">
@@ -37,23 +35,24 @@
       </div>
 
       <section class="intake">
-        <div class="intake-label"><b>Exhibit A</b>The evidence</div>
+        <div class="intake-label"><b data-i18n="exhibit">Exhibit A</b><span data-i18n="evidence">The evidence</span></div>
         <div>
           <textarea
             id="chat"
             spellcheck="false"
-            aria-label="Chat transcript"
-            placeholder="Paste a chat, or drop an export here: WhatsApp, Telegram, Discord, Slack, Messenger, iMessage, CSV…&#10;&#10;Or just write it out:&#10;Ana: are you coming tonight?&#10;Ben: k"
+            data-i18n-attr="aria-label: chatLabel; placeholder: chatPlaceholder"
           ></textarea>
           <div class="intake-bar">
             <div id="subjects" class="subjects" aria-live="polite"></div>
-            <button id="sample" class="link" type="button">Try a sample chat</button>
-            <button id="judge" class="primary" type="button" disabled>Judge them</button>
+            <button id="open-file" class="link" type="button" data-i18n="openFile"></button>
+            <input id="file" type="file" hidden accept=".txt,.zip,.json,.html,.htm,.csv,.tsv,text/plain,application/zip,application/json,text/html,text/csv" />
+            <button id="sample" class="link" type="button" data-i18n="sample"></button>
+            <button id="judge" class="primary" type="button" disabled data-i18n="judge"></button>
           </div>
           <form id="names-form" class="names-form" hidden>
-            <label for="names">Couldn’t tell who is talking. Who’s in this chat?</label>
-            <input id="names" autocomplete="off" placeholder="Names, separated by commas" />
-            <button type="submit">Use these names</button>
+            <label for="names" data-i18n="namesLabel"></label>
+            <input id="names" autocomplete="off" data-i18n-attr="placeholder: namesPlaceholder" />
+            <button type="submit" data-i18n="namesSubmit"></button>
           </form>
           <form id="key-form" class="key-form" hidden>
             <input
@@ -61,12 +60,11 @@
               type="password"
               autocomplete="off"
               required
-              placeholder="Your OpenRouter key (sk-or-…), kept in this browser only"
-              aria-label="OpenRouter API key"
+              data-i18n-attr="placeholder: keyPlaceholder; aria-label: keyLabel"
             />
-            <button type="submit">Save and judge</button>
+            <button type="submit" data-i18n="keySubmit"></button>
           </form>
-          <p class="fineprint">The chat goes to OpenRouter and TypeSafe for analysis. This page stores nothing.</p>
+          <p class="fineprint" data-i18n="fineprint"></p>
           <p id="error" class="error" role="alert" hidden></p>
         </div>
       </section>
@@ -80,21 +78,36 @@
         <article class="suspect">
           <img id="suspect-mascot" alt="" width="192" height="192" />
           <div>
-            <p class="kicker">Prime suspect</p>
+            <p class="kicker" data-i18n="suspect"></p>
             <p id="suspect-name" class="suspect-name"></p>
             <p id="suspect-stat" class="suspect-stat"></p>
           </div>
           <div id="suspect-bars" class="bars"></div>
-          <div class="stamp">Guilty</div>
+          <div class="stamp" data-i18n="guilty"></div>
         </article>
+        <div id="records" class="records"></div>
         <div id="plates" class="plates"></div>
-        <p id="footnote" class="footnote"></p>
+        <div class="results-foot">
+          <p id="footnote" class="footnote"></p>
+          <button id="share" class="primary" type="button" data-i18n="share"></button>
+        </div>
       </section>
     </main>
 
-    <footer class="colophon">
-      Not peer reviewed. Not reviewed at all. Judgments by Jev from TypeSafe, served through OpenRouter.
-    </footer>
+    <footer class="colophon" data-i18n="colophon"></footer>
+
+    <dialog id="card-dialog" class="card-dialog">
+      <canvas id="card-canvas" width="1080" height="1350"></canvas>
+      <form method="dialog" class="card-controls">
+        <fieldset>
+          <legend data-i18n="cardNames"></legend>
+          <div id="card-names" class="card-names"></div>
+        </fieldset>
+        <button id="card-share" class="primary" type="button" data-i18n="cardShare"></button>
+        <button id="card-download" class="primary" type="button" data-i18n="cardDownload"></button>
+        <button class="link" value="close" data-i18n="cardClose"></button>
+      </form>
+    </dialog>
 
     <template id="bar-row">
       <div class="bar-row">
@@ -108,7 +121,7 @@
       <article class="plate">
         <div class="plate-head">
           <span class="plate-no"></span>
-          <span class="menace"><span class="menace-value">0</span>Menace index</span>
+          <span class="menace"><span class="menace-value">0</span><span class="menace-label"></span></span>
         </div>
         <div class="plate-figure"><img alt="" width="240" height="240" /><div class="stamp"></div></div>
         <h2 class="plate-name"></h2>
@@ -116,6 +129,7 @@
         <p class="plate-species"></p>
         <p class="plate-note"></p>
         <div class="measures"></div>
+        <dl class="counted"></dl>
         <dl class="findings"></dl>
       </article>
     </template>

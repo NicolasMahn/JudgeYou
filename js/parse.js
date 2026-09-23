@@ -1,4 +1,5 @@
 import { fromJson, fromTable, fromTelegramHtml, htmlToText } from './parse-structured.js';
+import { readStamps } from './stamps.js';
 
 // Building blocks for timestamps as chat apps write them.
 const MONTH = '(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\\.?';
@@ -44,6 +45,7 @@ const FORMATS = [
 ];
 
 const STAMP_START = new RegExp(`^\\[?${STAMP}`);
+const STAMP_ANYWHERE = new RegExp(STAMP);
 const DATE_LINE = new RegExp(`^(?:[A-Za-z]+,?\\s)?${DATE}(?:,?\\s\\(?[A-Za-z]+\\)?)?$`);
 const MAX_WEAK_NAME_WORDS = 3;
 const SAMPLE_LINES = 3000;
@@ -63,9 +65,9 @@ export function parseChat(raw) {
   const looksLikeHtml = !structured && /^\s*</.test(text) && /<\/(?:div|p|body|html)>/i.test(text);
   const messages = structured ?? parseLines(looksLikeHtml ? htmlToText(text) : text);
 
-  return messages
-    .filter((m) => m.author.trim() && m.text.trim() && !PLACEHOLDER.test(m.text.trim()))
-    .map((m) => ({ author: clean(m.author).replace(/^~\s*/, ''), text: clean(m.text) }));
+  const kept = messages.filter((m) => m.author.trim() && m.text.trim() && !PLACEHOLDER.test(m.text.trim()));
+  const times = readStamps(kept.map((m) => m.stamp ?? null));
+  return kept.map((m, i) => ({ author: clean(m.author).replace(/^~\s*/, ''), text: clean(m.text), at: times[i] }));
 }
 
 function clean(text) {
@@ -89,10 +91,10 @@ function parseLines(text) {
     const match = format.re.exec(line);
 
     if (match && format.kind === 'stamp') {
-      current = { author: lines[authorAt.get(i)] ?? '', text: '' };
+      current = { author: lines[authorAt.get(i)] ?? '', text: '', stamp: stampOf(line, format) };
       messages.push(current);
     } else if (match && format.kind !== 'stamp' && isSpeaker(match[1])) {
-      current = { author: match[1], text: match[2] ?? '' };
+      current = { author: match[1], text: match[2] ?? '', stamp: stampOf(line, format) };
       messages.push(current);
     } else if (format.stamped && STAMP_START.test(line)) {
       // A timestamped line without "Name:" is a system notice, not a continuation.
@@ -102,6 +104,17 @@ function parseLines(text) {
     }
   }
   return messages;
+}
+
+/**
+ * The raw timestamp of a message's first line. Inline formats only count a
+ * stamp at the start, so a time inside the text isn't mistaken for one; weak
+ * formats have none worth trusting.
+ */
+function stampOf(line, format) {
+  if (format.weak) return null;
+  const found = (format.kind === 'inline' ? STAMP_START : STAMP_ANYWHERE).exec(line);
+  return found?.[0].replace(/^\[/, '') ?? null;
 }
 
 function bestFormat(lines) {

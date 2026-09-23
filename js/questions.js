@@ -1,3 +1,5 @@
+import en from './locales/en.js';
+
 export const MODEL = '~typesafe/jev-latest';
 
 // Jev allows 32k tokens for the state plus the longest question. Measured on
@@ -36,6 +38,8 @@ const TYPE_CRITERIA = {
   npc: 'No opinions of their own; agrees with whoever spoke last; generic filler like "same", "lol", "haha"',
 };
 
+// Score levels are shared with the English UI, so the wording Jev judges
+// against is the wording people read. Other languages translate by position.
 const PERSONAL_QUESTIONS = {
   type: (name) => ({
     type: 'choice',
@@ -45,42 +49,22 @@ const PERSONAL_QUESTIONS = {
   passive_aggression: (name) => ({
     type: 'score',
     instructions: `How passive-aggressive is ${name}?`,
-    criteria: [
-      'Says what they mean, kindly',
-      'An occasional pointed remark',
-      'Regular veiled digs',
-      'Weaponised politeness in most messages',
-    ],
+    criteria: en.levels.passive_aggression,
   }),
   main_character: (name) => ({
     type: 'score',
     instructions: `How much does ${name} make the conversation about themselves?`,
-    criteria: [
-      'Mostly asks about and responds to others',
-      'Takes a fair share of the attention',
-      'Often steers topics back to themselves',
-      'Everyone else is a supporting character',
-    ],
+    criteria: en.levels.main_character,
   }),
   effort: (name) => ({
     type: 'score',
     instructions: `How much effort does ${name} put into their messages?`,
-    criteria: [
-      'One-word replies and reactions only',
-      'Short but relevant replies',
-      'Thoughtful, complete replies',
-      'Essays nobody asked for',
-    ],
+    criteria: en.levels.effort,
   }),
   drama: (name) => ({
     type: 'score',
     instructions: `How much drama does ${name} generate?`,
-    criteria: [
-      'Calm and steady throughout',
-      'Mildly excitable',
-      'Frequently escalates small things',
-      'Every message is an emergency',
-    ],
+    criteria: en.levels.drama,
   }),
   started_it: (name) => ({
     type: 'noul',
