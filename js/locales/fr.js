@@ -51,7 +51,7 @@ export default {
     unreadableZip: 'Impossible de lire ce ZIP. Essayez d’exporter la discussion sans médias.',
   },
 
-  suspectStat: '{type} · p = {p} · confiance {confidence}',
+  suspectStat: '{type} · p = {p} · confiance {confidence}',
   plate: 'Planche {n}',
   menace: 'Indice de nuisance',
   confidence: 'conf. {c}',

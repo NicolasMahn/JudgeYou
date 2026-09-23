@@ -197,15 +197,47 @@ textarea.dragging {
   margin-top: 1rem;
 }
 
+.intake-bar .primary {
+  margin-left: auto;
+}
+
 .subjects {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.4rem;
-  flex: 1;
-  min-width: 12rem;
   font-size: 0.85rem;
   color: var(--ink-muted);
+}
+
+.subjects:not(:empty) {
+  margin-top: 0.75rem;
+}
+
+/* Opening an export is the main way in on a phone, so it looks like a button. */
+.secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.8rem 1.2rem;
+  border: 1px solid var(--ink);
+  border-radius: 2px;
+  background: var(--paper-raised);
+  color: var(--ink);
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.secondary:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.secondary svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .chip {
@@ -537,6 +569,8 @@ button {
   padding-top: 0.8rem;
   border-top: 1px solid var(--rule);
   font: italic 400 0.95rem/1.45 var(--font-display);
+  /* Two lines, so plates side by side line up even when a note is shorter. */
+  min-height: calc(2 * 1.45em + 0.8rem + 1px);
 }
 
 .measures {
@@ -567,9 +601,14 @@ button {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 0.5rem;
-  margin: 0 0 1rem;
+  margin: auto 0 1rem;
   padding-top: 1rem;
   border-top: 1px solid var(--rule);
+}
+
+/* Both rows of numbers sit together at the bottom of the plate. */
+.counted + .findings {
+  margin-top: 0;
 }
 
 /* Counted, not judged: set in the mono face so facts read differently from Jev's guesses. */
@@ -768,6 +807,19 @@ button {
     grid-column: 1 / -1;
   }
 
+  /* On top of the mascot, where it can't cover the kicker. */
+  .suspect .stamp {
+    top: 1.5rem;
+    right: auto;
+    left: -0.25rem;
+    font-size: 0.85rem;
+  }
+
+  .intake-bar .primary {
+    flex-basis: 100%;
+    margin-left: 0;
+  }
+
   .masthead span:nth-child(2) {
     display: none;
   }
@@ -779,6 +831,22 @@ button {
   .card-dialog canvas {
     width: min(100%, 22rem);
     justify-self: center;
+  }
+}
+
+/* Fingers need bigger targets than a mouse pointer. */
+@media (pointer: coarse) {
+  .chip {
+    min-height: 2.5rem;
+    padding-inline: 1rem;
+  }
+
+  .link {
+    min-height: 2.75rem;
+  }
+
+  .masthead select {
+    min-height: 2.25rem;
   }
 }
 

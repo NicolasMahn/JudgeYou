@@ -51,7 +51,7 @@ export default {
     unreadableZip: 'That ZIP can’t be read. Try exporting the chat without media.',
   },
 
-  suspectStat: '{type} · p = {p} · confidence {confidence}',
+  suspectStat: '{type} · p = {p} · confidence {confidence}',
   plate: 'Plate {n}',
   menace: 'Menace index',
   confidence: 'conf. {c}',
