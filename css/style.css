@@ -600,6 +600,12 @@ button {
   margin-left: -1.25rem;
 }
 
+/* No mascot to sit on, so the stamp moves clear of the text. */
+.suspect.is-dismissed .stamp {
+  left: auto;
+  right: 0;
+}
+
 .suspect-note {
   margin: 0.5rem 0 0;
   font: italic 400 1rem/1.4 var(--font-display);

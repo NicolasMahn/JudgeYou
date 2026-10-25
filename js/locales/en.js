@@ -33,6 +33,10 @@ export default {
   forgotten: 'Deleted. Only the nameless verdicts remain.',
   suspect: 'Prime suspect',
   guilty: 'Guilty',
+  nobody: 'Nobody',
+  peaceful: 'Suspiciously peaceful',
+  peacefulStat: 'Suspiciously peaceful · p = {p} · confidence {confidence}',
+  dismissed: 'Case dismissed',
   duo: 'The duo',
   duoStamp: 'Confirmed',
   duoShare: 'Share of messages',
@@ -45,6 +49,7 @@ export default {
   cardDownload: 'Download image',
   cardClose: 'Close',
   cardShareText: 'Our prime suspect: {name} ({type}). Who is it in yours?',
+  nobodyShareText: 'Case dismissed: nobody in our chat is guilty. Suspicious. Who is it in yours?',
   duoShareText: '{names}: {type}. What are you two?',
   cardTagline: 'Field report from our chat',
   cardCopy: 'Copy link',
@@ -80,6 +85,7 @@ export default {
   plate: 'Plate {n}',
   menace: 'Menace index',
   confidence: 'conf. {c}',
+  countedLevel: 'counted · n = {n}',
 
   counted: {
     messages: 'Messages',

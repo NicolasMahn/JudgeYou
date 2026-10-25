@@ -33,6 +33,10 @@ export default {
   forgotten: 'Gelöscht. Nur die namenlosen Urteile bleiben.',
   suspect: 'Hauptverdacht',
   guilty: 'Schuldig',
+  nobody: 'Niemand',
+  peaceful: 'Verdächtig friedlich',
+  peacefulStat: 'Verdächtig friedlich · p = {p} · Konfidenz {confidence}',
+  dismissed: 'Eingestellt',
   duo: 'Das Duo',
   duoStamp: 'Bestätigt',
   duoShare: 'Anteil der Nachrichten',
@@ -45,6 +49,7 @@ export default {
   cardDownload: 'Bild herunterladen',
   cardClose: 'Schließen',
   cardShareText: 'Unser Hauptverdacht fällt auf {name} ({type}). Wer ist es bei euch?',
+  nobodyShareText: 'Verfahren eingestellt: In unserem Chat ist niemand schuldig. Verdächtig. Wer ist es bei euch?',
   duoShareText: '{names}: {type}. Und was seid ihr zwei?',
   cardTagline: 'Befund aus unserem Chat',
   cardCopy: 'Link kopieren',
@@ -80,6 +85,7 @@ export default {
   plate: 'Tafel {n}',
   menace: 'Gefahrenindex',
   confidence: 'Konf. {c}',
+  countedLevel: 'gezählt · n = {n}',
 
   counted: {
     messages: 'Nachrichten',

@@ -8,10 +8,13 @@ const EMAIL = /[\w.+-]+@[\w-]+(\.[\w-]+)+/g;
 const MIN_PHONE_DIGITS = 9; // fewer would also catch dates like 25.10.2026
 const MIN_ALIAS_LENGTH = 3;
 
+/** The judged people, in order: the culprit's options, without its "nobody". */
+export const judgedIn = (request) => Object.keys(request.questions?.culprit?.criteria ?? {}).filter((name) => name !== 'nobody');
+
 /** Every name in a Jev request: the judged people, participants and authors. */
 export function namesIn(request) {
   const names = [
-    ...Object.keys(request.questions?.culprit?.criteria ?? {}),
+    ...judgedIn(request),
     ...(Array.isArray(request.state?.participants) ? request.state.participants : []),
     ...(Array.isArray(request.state?.messages) ? request.state.messages.map((m) => m?.from) : []),
   ];

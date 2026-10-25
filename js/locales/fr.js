@@ -33,6 +33,10 @@ export default {
   forgotten: 'Supprimée. Seuls les verdicts sans noms restent.',
   suspect: 'Suspect principal',
   guilty: 'Coupable',
+  nobody: 'Personne',
+  peaceful: 'Étrangement paisible',
+  peacefulStat: 'Étrangement paisible · p = {p} · confiance {confidence}',
+  dismissed: 'Affaire classée',
   duo: 'Le duo',
   duoStamp: 'Confirmé',
   duoShare: 'Part des messages',
@@ -45,6 +49,7 @@ export default {
   cardDownload: 'Télécharger l’image',
   cardClose: 'Fermer',
   cardShareText: 'Notre suspect n° 1 : {name} ({type}). Et chez vous ?',
+  nobodyShareText: 'Affaire classée : personne n’est coupable dans notre discussion. Suspect. Et chez vous ?',
   duoShareText: '{names} : {type}. Et vous deux, vous êtes quoi ?',
   cardTagline: 'Rapport de terrain sur notre discussion',
   cardCopy: 'Copier le lien',
@@ -80,6 +85,7 @@ export default {
   plate: 'Planche {n}',
   menace: 'Indice de nuisance',
   confidence: 'conf. {c}',
+  countedLevel: 'compté · n = {n}',
 
   counted: {
     messages: 'Messages',

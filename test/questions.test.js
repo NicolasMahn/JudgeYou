@@ -60,3 +60,10 @@ test('two people are judged as a duo, more as a group with a culprit', () => {
   assert.equal(group.duo, undefined);
   assert.equal(readVerdicts({ duo: { choice: 'frenemies' } }, ['Ana', 'Ben']).duo.choice, 'frenemies');
 });
+
+test('a peaceful chat may acquit everyone, and the journal never takes "nobody" for a person', async () => {
+  const { judgedIn } = await import('../server/scrub.js');
+  const request = buildRequest([{ author: 'Ana', text: 'hi' }], ['Ana', 'Ben', 'Cy']).body;
+  assert.ok('nobody' in request.questions.culprit.criteria);
+  assert.deepEqual(judgedIn(request), ['Ana', 'Ben', 'Cy']);
+});

@@ -33,6 +33,10 @@ export default {
   forgotten: 'Borrado. Solo quedan los veredictos sin nombres.',
   suspect: 'Sospechoso principal',
   guilty: 'Culpable',
+  nobody: 'Nadie',
+  peaceful: 'Sospechosamente pacífico',
+  peacefulStat: 'Sospechosamente pacífico · p = {p} · confianza {confidence}',
+  dismissed: 'Caso archivado',
   duo: 'El dúo',
   duoStamp: 'Confirmado',
   duoShare: 'Parte de los mensajes',
@@ -45,6 +49,7 @@ export default {
   cardDownload: 'Descargar imagen',
   cardClose: 'Cerrar',
   cardShareText: 'Nuestro principal sospechoso: {name} ({type}). ¿Y en vuestro chat?',
+  nobodyShareText: 'Caso archivado: en nuestro chat nadie es culpable. Sospechoso. ¿Y en vuestro chat?',
   duoShareText: '{names}: {type}. ¿Y vosotros dos qué sois?',
   cardTagline: 'Informe de campo de nuestro chat',
   cardCopy: 'Copiar enlace',
@@ -80,6 +85,7 @@ export default {
   plate: 'Lámina {n}',
   menace: 'Índice de amenaza',
   confidence: 'conf. {c}',
+  countedLevel: 'contado · n = {n}',
 
   counted: {
     messages: 'Mensajes',

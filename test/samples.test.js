@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { parseChat } from '../js/parse.js';
-import { readVerdicts } from '../js/questions.js';
+import { NOBODY, readVerdicts } from '../js/questions.js';
 import { SAMPLES } from '../js/sample.js';
 import { believableDelay, defaultSubjects, storedAnswers } from '../js/sample-verdicts.js';
 
@@ -14,7 +14,7 @@ test('every sample has a stored verdict that answers every question', () => {
     assert.ok(answers, `${id} has no stored verdict for ${subjects.join(', ')}`);
     assert.equal(sampleId, id);
     const { culprit, people } = readVerdicts(answers, subjects);
-    assert.ok(subjects.includes(culprit.choice), id);
+    assert.ok([...subjects, NOBODY].includes(culprit.choice), id);
     for (const person of people) {
       for (const [key, answer] of Object.entries(person.answers)) assert.ok(answer, `${id}: ${person.name} ${key}`);
     }

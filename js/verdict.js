@@ -9,8 +9,24 @@ const WEIGHTS = {
 
 /** A Score answer as a fraction of its scale, 0–1. */
 export function normalisedScore(answer) {
-  const topLevel = Object.keys(answer.legend).length - 1;
+  // Judged answers carry the model's legend, counted ones their number of levels.
+  const topLevel = (answer.legend ? Object.keys(answer.legend).length : answer.levels) - 1;
   return answer.score / topLevel;
+}
+
+// Median words per message at which each effort level starts: one-word
+// replies, short but relevant, complete replies, essays.
+const EFFORT_FROM = [0, 3, 7, 15];
+
+/**
+ * Effort on the same four levels as the other scales, but counted from the
+ * person's messages instead of judged, so it can't contradict the numbers
+ * beside it. Null without counts (an unrecognised format).
+ */
+export function countedEffort(counts) {
+  if (!counts?.messages || !Number.isFinite(counts.medianWords)) return null;
+  const score = EFFORT_FROM.findLastIndex((from) => counts.medianWords >= from);
+  return { score, levels: EFFORT_FROM.length, counted: counts.messages };
 }
 
 /** Returns 0–100. */

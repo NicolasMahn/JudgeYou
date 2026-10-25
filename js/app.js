@@ -1,8 +1,8 @@
 import { parseChat, participantsOf } from './parse.js';
-import { buildRequest, readVerdicts, MAX_SUBJECTS, MIN_MESSAGES_TO_JUDGE, STATE_TOKEN_BUDGET } from './questions.js';
+import { buildRequest, readVerdicts, MAX_SUBJECTS, MIN_MESSAGES_TO_JUDGE, NOBODY, STATE_TOKEN_BUDGET } from './questions.js';
 import { askJudge, forgetChat, readScreenshots } from './api.js';
 import { forgetKept, rememberKept } from './kept.js';
-import { assignTypes, menaceIndex, normalisedScore, severityOf } from './verdict.js';
+import { assignTypes, countedEffort, menaceIndex, normalisedScore, severityOf } from './verdict.js';
 import { chatStats, recordsOf } from './stats.js';
 import { FileError, readChatFile } from './files.js';
 import { MAX_SCREENSHOTS, inTakenOrder, isImage, prepareScreenshot } from './screenshots.js';
@@ -509,25 +509,34 @@ function renderResults({ judged, culprit, duo, people, stats, meta }, { scroll =
 }
 
 function renderSuspect(culprit, judged, types, people) {
-  const suspectType = types[people.findIndex((p) => p.name === culprit.choice)].type;
+  const acquitted = culprit.choice === NOBODY;
   $('suspect').classList.remove('is-duo');
+  $('suspect').classList.toggle('is-dismissed', acquitted);
   $('duo-mascot').hidden = true;
+  $('suspect-mascot').hidden = acquitted;
   $('suspect-note').hidden = true;
   $('suspect-kicker').textContent = t('suspect');
-  $('suspect-stamp').textContent = t('guilty');
-  $('suspect-mascot').src = mascotOf(suspectType);
-  $('suspect-name').textContent = culprit.choice;
-  $('suspect-stat').textContent = t('suspectStat', {
-    type: typeName(suspectType),
-    p: culprit.probabilities[culprit.choice].toFixed(2),
-    confidence: culprit.confidence.toFixed(2),
-  });
-  $('suspect-bars').replaceChildren(...judged.map((name) => barRow(name, culprit.probabilities[name] ?? 0)));
+  $('suspect-stamp').textContent = t(acquitted ? 'dismissed' : 'guilty');
+  const stat = { p: culprit.probabilities[culprit.choice].toFixed(2), confidence: culprit.confidence.toFixed(2) };
+  if (acquitted) {
+    $('suspect-name').textContent = t('nobody');
+    $('suspect-stat').textContent = t('peacefulStat', stat);
+  } else {
+    const suspectType = types[people.findIndex((p) => p.name === culprit.choice)].type;
+    $('suspect-mascot').src = mascotOf(suspectType);
+    $('suspect-name').textContent = culprit.choice;
+    $('suspect-stat').textContent = t('suspectStat', { type: typeName(suspectType), ...stat });
+  }
+  $('suspect-bars').replaceChildren(
+    ...[...judged, NOBODY].map((name) => barRow(name === NOBODY ? t('nobody') : name, culprit.probabilities[name] ?? 0)),
+  );
 }
 
 /** Two people: a verdict on the pair, and who carries the chat, counted. */
 function renderDuo(duo, judged, types, stats) {
   $('suspect').classList.add('is-duo');
+  $('suspect').classList.remove('is-dismissed');
+  $('suspect-mascot').hidden = false;
   $('duo-mascot').hidden = false;
   $('suspect-mascot').src = mascotOf(types[0].type);
   $('duo-mascot').src = mascotOf(types[1].type);
@@ -582,7 +591,8 @@ function plate({ name, answers }, index, assigned, counts) {
   card.querySelector('.menace-value').dataset.target = menace;
   card.querySelector('.stamp').textContent = severityLabel(severityOf(menace));
 
-  card.querySelector('.measures').append(...TRAIT_KEYS.map((key) => scale(key, answers[key])));
+  const measured = (key) => (key === 'effort' ? countedEffort(counts) : answers[key]);
+  card.querySelector('.measures').append(...TRAIT_KEYS.filter(measured).map((key) => scale(key, measured(key))));
 
   const counted = card.querySelector('.counted');
   if (counts) {
@@ -615,7 +625,9 @@ function scale(key, answer) {
   const meter = fromTemplate('scale');
   meter.style.setProperty('--segments', levels.length - 1);
   meter.querySelector('.scale-name').textContent = t(`traits.${key}`);
-  meter.querySelector('.scale-confidence').textContent = t('confidence', { c: answer.confidence.toFixed(2) });
+  meter.querySelector('.scale-confidence').textContent = answer.counted
+    ? t('countedLevel', { n: answer.counted })
+    : t('confidence', { c: answer.confidence.toFixed(2) });
   meter.querySelector('.fill').dataset.width = percent(normalisedScore(answer));
   meter.querySelector('.scale-level').textContent = levels[Math.round(answer.score)];
 

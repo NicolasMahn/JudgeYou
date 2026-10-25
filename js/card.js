@@ -3,6 +3,7 @@
 // counts, never chat text, and names can be changed before anything leaves.
 import { t } from './i18n.js';
 import { duoName, duoNote, mascotOf, severityLabel, typeName } from './presentation.js';
+import { NOBODY } from './questions.js';
 
 const WIDTH = 1080;
 const HEIGHT = 1350;
@@ -49,13 +50,15 @@ export function openCard(verdict) {
 
   // The link carries the names as shown on the card, so edits travel with it.
   const link = () => verdict.link(names.map((name) => shown.get(name) || name));
-  const suspectType = verdict.people.find((p) => p.name === verdict.suspect).type;
+  const suspectType = verdict.people.find((p) => p.name === verdict.suspect)?.type;
   // The punchline, then the link: chat apps show text next to the image.
   const shownOf = (name) => shown.get(name) || name;
   const punchline = () =>
     verdict.duo
       ? t('duoShareText', { names: names.map(shownOf).join(' & '), type: duoName(verdict.duo) })
-      : t('cardShareText', { name: shownOf(verdict.suspect), type: typeName(suspectType) });
+      : verdict.suspect === NOBODY
+        ? t('nobodyShareText')
+        : t('cardShareText', { name: shownOf(verdict.suspect), type: typeName(suspectType) });
   const message = () => `${punchline()} ${link()}`;
 
   $('card-share').hidden = !navigator.canShare?.({ files: [new File([], 'x.png', { type: 'image/png' })] });
@@ -114,7 +117,7 @@ async function drawCard(canvas, { suspect, duo, people, records }, shownName) {
   const body = (weight, size) => `${weight} ${size}px ${token('--font-body')}`;
   const mono = (weight, size) => `${weight} ${size}px ${token('--font-mono')}`;
 
-  const suspectType = people.find((p) => p.name === suspect).type;
+  const suspectType = people.find((p) => p.name === suspect)?.type;
   const [mascots] = await Promise.all([
     Promise.all(people.map((p) => image(mascotOf(p.type)))),
     document.fonts.load(display(800, 96)),
@@ -163,6 +166,12 @@ async function drawCard(canvas, { suspect, duo, people, records }, shownName) {
     ctx.font = display(400, 24, 'italic');
     lines(ctx, duoNote(duo), textWidth, 2).forEach((line, n) => text(line, textX, 420 + n * 30, ctx.font, color.soft, textWidth));
     stamp(ctx, t('duoStamp').toUpperCase(), MARGIN + 190, 455, mono(600, 30), color);
+  } else if (suspect === NOBODY) {
+    // Case dismissed: no specimen to show, so the verdict takes the width.
+    text(t('suspect').toUpperCase(), MARGIN, 250, mono(500, 22), color.accent, inner);
+    text(t('nobody'), MARGIN, 350, display(800, 104), color.ink, inner);
+    text(t('peaceful'), MARGIN, 405, body(600, 34), color.soft, inner);
+    stamp(ctx, t('dismissed').toUpperCase(), WIDTH - MARGIN - 190, 330, mono(600, 30), color);
   } else {
     // Prime suspect
     ctx.drawImage(mascots[people.findIndex((p) => p.name === suspect)], MARGIN - 20, 150, 330, 330);

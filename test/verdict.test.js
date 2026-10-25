@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { assignTypes } from '../js/verdict.js';
+import { assignTypes, countedEffort, normalisedScore } from '../js/verdict.js';
 
 const answer = (probabilities) => ({ probabilities });
 
@@ -23,4 +23,11 @@ test('confident verdicts are kept even when they repeat', () => {
     types.map((t) => t.type),
     ['sloth', 'sloth'],
   );
+});
+
+test('effort is counted from words per message, on the same four levels', () => {
+  const effort = (medianWords) => countedEffort({ messages: 10, medianWords })?.score;
+  assert.deepEqual([1, 2, 3, 6, 7, 14, 15, 40].map(effort), [0, 0, 1, 1, 2, 2, 3, 3]);
+  assert.equal(countedEffort(null), null, 'no counts, no effort');
+  assert.equal(normalisedScore(countedEffort({ messages: 10, medianWords: 11 })), 2 / 3);
 });

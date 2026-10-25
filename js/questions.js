@@ -46,39 +46,37 @@ const TYPE_CRITERIA = {
 
 // Score levels are shared with the English UI, so the wording Jev judges
 // against is the wording people read. Other languages translate by position.
+// Each question also says what doesn't count: everyday chats are short,
+// practical and full of jokes, and without that a plain "ok" reads as a dig.
+// Effort isn't asked: words per message are counted (see countedEffort).
 const PERSONAL_QUESTIONS = {
   type: (name) => ({
     type: 'choice',
-    instructions: `Which type best captures what makes ${name} stand out compared with the other people in this chat? Judge ${name}'s own messages.`,
+    instructions: `Which type best captures what makes ${name} stand out compared with the other people in this chat? Judge ${name}'s own messages. Everyday planning and short replies are what everyone does; look for their most distinctive habit.`,
     criteria: TYPE_CRITERIA,
   }),
   passive_aggression: (name) => ({
     type: 'score',
-    instructions: `How passive-aggressive is ${name}?`,
+    instructions: `How passive-aggressive is ${name}? Short or plain replies, emoji on their own and open teasing between friends who joke with each other are not passive aggression.`,
     criteria: en.levels.passive_aggression,
   }),
   main_character: (name) => ({
     type: 'score',
-    instructions: `How much does ${name} make the conversation about themselves?`,
+    instructions: `How much does ${name} make the conversation about themselves? Answering questions about themselves or sharing news that fits the topic is normal; count steering attention away from others.`,
     criteria: en.levels.main_character,
-  }),
-  effort: (name) => ({
-    type: 'score',
-    instructions: `How much effort does ${name} put into their messages?`,
-    criteria: en.levels.effort,
   }),
   drama: (name) => ({
     type: 'score',
-    instructions: `How much drama does ${name} generate?`,
+    instructions: `How much drama does ${name} generate? Excitement, capital letters and exclamation marks about good news are not drama; count turning small things into a crisis.`,
     criteria: en.levels.drama,
   }),
   started_it: (name) => ({
     type: 'noul',
-    instructions: `${name} started the main disagreement or tension in this chat.`,
+    instructions: `${name} started the main disagreement or tension in this chat. If there is no real disagreement or tension, this is false for everyone.`,
   }),
   leaves_on_read: (name) => ({
     type: 'noul',
-    instructions: `${name} ignores or dodges direct questions from others.`,
+    instructions: `${name} ignores or dodges direct questions from others. Brief answers are still answers, and only questions addressed to ${name} count.`,
   }),
   secretly_right: (name) => ({
     type: 'noul',
@@ -87,6 +85,8 @@ const PERSONAL_QUESTIONS = {
 };
 
 const CULPRIT = 'culprit';
+// A peaceful chat may acquit everyone instead of convicting whoever is loudest.
+export const NOBODY = 'nobody';
 const DUO = 'duo';
 
 // Two people get a verdict on the pair instead of a culprit, who between two
@@ -138,8 +138,8 @@ export function buildRequest(chat, subjects, budget = STATE_TOKEN_BUDGET) {
   const questions = {
     [CULPRIT]: {
       type: 'choice',
-      instructions: 'Who is most responsible for the tension or drama in this chat?',
-      criteria: Object.fromEntries(subjects.map((name) => [name, null])),
+      instructions: `Who is most responsible for the tension or drama in this chat? If there is none worth the name, choose "${NOBODY}".`,
+      criteria: { ...Object.fromEntries(subjects.map((name) => [name, null])), [NOBODY]: 'No real tension or drama: everyone gets along' },
     },
   };
 

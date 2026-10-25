@@ -1,4 +1,4 @@
-import { createScrubber, namesIn } from './scrub.js';
+import { createScrubber, judgedIn, namesIn } from './scrub.js';
 import { seal } from './seal.js';
 import { createVisitorIds, deletionCode, hash, resultId } from './store.js';
 
@@ -20,7 +20,7 @@ export function createJournal({ store, publicKey, visitorId = createVisitorIds()
         const kept = keep && status === 200 && context.source !== 'sample';
         const code = kept ? deletionCode() : null;
         const id = status === 200 && payload?.answers ? resultId() : null;
-        const people = Object.keys(request.questions.culprit?.criteria ?? {}).length;
+        const people = judgedIn(request).length;
         store.record({
           at: now().toISOString(),
           visitor: visitorId(ip),
