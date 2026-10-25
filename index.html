@@ -34,15 +34,24 @@
       <section id="intake" class="intake">
         <div class="intake-label"><b data-i18n="exhibit">Exhibit A</b><span data-i18n="evidence">The evidence</span></div>
         <div>
-          <textarea
-            id="chat"
-            spellcheck="false"
-            data-i18n-attr="aria-label: chatLabel; placeholder: chatPlaceholder"
-          ></textarea>
+          <div class="chat-box">
+            <textarea
+              id="chat"
+              spellcheck="false"
+              data-i18n-attr="aria-label: chatLabel; placeholder: chatPlaceholder"
+            ></textarea>
+            <button id="clear" class="clear" type="button" hidden data-i18n="clear"></button>
+          </div>
           <div id="shots" class="shots" hidden>
             <ol id="shot-list" class="shot-list"></ol>
-            <button id="read-shots" class="primary" type="button"></button>
+            <div class="shot-actions">
+              <button id="read-new" class="secondary" type="button" hidden data-i18n="readNew"></button>
+              <button id="read-shots" class="primary" type="button"></button>
+            </div>
           </div>
+          <p id="merge-note" class="merge-note" hidden>
+            <span data-i18n="mergeNote"></span> <button id="merge-undo" class="link" type="button" data-i18n="mergeUndo"></button>
+          </p>
           <div id="subjects" class="subjects" aria-live="polite"></div>
           <div class="intake-bar">
             <!-- Separate pickers: images alone open the phone's photo picker, with

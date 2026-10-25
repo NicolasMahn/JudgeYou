@@ -38,6 +38,7 @@ const judgeButton = $('judge');
 const namesForm = $('names-form');
 const consent = $('consent');
 const readButton = $('read-shots');
+const readNewButton = $('read-new');
 const errorBox = $('error');
 const lab = $('lab');
 const results = $('results');
@@ -111,12 +112,40 @@ function onChatChanged() {
   spared.clear();
   namesForm.hidden = !chat.value.trim() || !isRawMode();
   renderSubjects();
+  renderScreenshots();
+}
+
+/** Forgets the last verdict and the names typed for it, before a different chat. */
+function resetVerdict() {
+  results.hidden = true;
+  lastVerdict = null;
+  typedNames = [];
+  $('names').value = '';
+}
+
+/** Back to an empty page: no chat, no waiting screenshots, no verdict. */
+function clearAll() {
+  resetVerdict();
+  screenshots.forEach(({ url }) => URL.revokeObjectURL(url));
+  screenshots = [];
+  chat.value = '';
+  source = 'paste';
+  errorBox.hidden = true;
+  $('merge-note').hidden = true;
+  onChatChanged();
+  showNextStep($('intake'));
+}
+
+function updateClearButton() {
+  $('clear').hidden = !chat.value.trim() && !screenshots.length && results.hidden;
 }
 
 async function loadFile(file) {
   errorBox.hidden = true;
   try {
-    chat.value = await readChatFile(file);
+    const text = await readChatFile(file);
+    resetVerdict();
+    chat.value = text;
     source = 'file';
     onChatChanged();
     showNextStep($('judge'));
@@ -171,12 +200,24 @@ function renderScreenshots() {
       return item;
     }),
   );
-  readButton.textContent = t('readScreenshots', { n: screenshots.length });
+  // With a chat already in the box, the screenshots can continue it or start
+  // a new one; only the person who took them knows which.
+  const choose = hasOwnChat();
+  readNewButton.hidden = !choose;
+  readButton.textContent = t(choose ? 'readAdd' : 'readScreenshots', { n: screenshots.length });
   updateReadButton();
+  updateClearButton();
 }
 
 function updateReadButton() {
-  readButton.disabled = !screenshots.length || readButton.dataset.busy === 'true';
+  const busy = readButton.dataset.busy === 'true';
+  readButton.disabled = !screenshots.length || busy;
+  readNewButton.disabled = busy;
+}
+
+/** A chat someone brought, as opposed to an empty box or our sample. */
+function hasOwnChat() {
+  return Boolean(chat.value.trim()) && source !== 'sample';
 }
 
 /**
@@ -195,9 +236,11 @@ function consented() {
   return false;
 }
 
-async function readTray() {
+/** Reads the waiting screenshots into the box, after the chat there or instead of it. */
+async function readTray({ add }) {
   if (!consented()) return;
   errorBox.hidden = true;
+  $('merge-note').hidden = true;
   readButton.dataset.busy = 'true';
   readButton.textContent = t('readingScreenshots');
   updateReadButton();
@@ -205,11 +248,29 @@ async function readTray() {
     const images = await Promise.all(screenshots.map(({ file }) => prepareScreenshot(file)));
     const transcript = await readScreenshots(images, localDate());
     if (!transcript.trim()) throw new Error(t('errors.noChatInScreenshots'));
-    chat.value = chat.value.trim() ? `${chat.value.trimEnd()}\n${transcript}` : transcript;
+    const appending = add && hasOwnChat();
+    const before = appending ? detected : [];
+    if (appending) {
+      chat.value = `${chat.value.trimEnd()}\n${transcript}`;
+    } else {
+      resetVerdict();
+      chat.value = transcript;
+    }
     source = 'screenshots';
     screenshots.forEach(({ url }) => URL.revokeObjectURL(url));
     screenshots = [];
     onChatChanged();
+    // Adding to the wrong chat is easy to miss; nobody in common gives it away.
+    const added = participantsOf(parseChat(transcript)).map((p) => p.name);
+    if (before.length && added.length && !added.some((name) => before.includes(name))) {
+      $('merge-note').hidden = false;
+      $('merge-undo').onclick = () => {
+        resetVerdict();
+        chat.value = transcript;
+        $('merge-note').hidden = true;
+        onChatChanged();
+      };
+    }
   } catch (error) {
     showError(error.name === 'InvalidStateError' || error.name === 'EncodingError' ? t('errors.unreadableImage') : apiError(error));
   } finally {
@@ -413,6 +474,7 @@ function renderResults({ judged, culprit, people, stats, meta }, { scroll = true
     });
 
   results.hidden = false;
+  updateClearButton();
   if (scroll) results.scrollIntoView({ behavior: 'smooth', block: 'start' });
   animateIn();
 }
@@ -557,7 +619,9 @@ for (const [button, input] of [['open-file', 'file'], ['open-shots', 'shot-file'
   });
 }
 
-readButton.addEventListener('click', readTray);
+readButton.addEventListener('click', () => readTray({ add: true }));
+readNewButton.addEventListener('click', () => readTray({ add: false }));
+$('clear').addEventListener('click', clearAll);
 
 // Installing is what puts JudgeYou in the share menu of WhatsApp and others.
 window.addEventListener('beforeinstallprompt', (event) => {
@@ -578,6 +642,7 @@ takeSharedFiles();
 // Each click brings the next sample; after the first, the button says so.
 let nextSample = 0;
 $('sample').addEventListener('click', () => {
+  resetVerdict();
   chat.value = SAMPLES[nextSample].chat;
   nextSample = (nextSample + 1) % SAMPLES.length;
   source = 'sample';

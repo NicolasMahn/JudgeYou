@@ -203,8 +203,18 @@ textarea.dragging {
 
 /* The main action spans the screen, within easy reach of a thumb. */
 .verdict,
-.shots .primary {
+.shot-actions {
   flex-basis: 100%;
+}
+
+.shot-actions {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.shot-actions button {
+  flex: 1;
+  justify-content: center;
 }
 
 /* Consent and the verdict are one act: sign the declaration, then judge. */
@@ -278,6 +288,36 @@ textarea.dragging {
 @keyframes nudge {
   25% { transform: translateX(-4px); }
   75% { transform: translateX(4px); }
+}
+
+/* Clearing sits on the box's top edge, like a tab, so it never covers text. */
+.chat-box {
+  position: relative;
+}
+
+.clear {
+  position: absolute;
+  top: -0.7rem;
+  right: 0.75rem;
+  padding: 0.15rem 0.55rem;
+  border: 1px solid var(--ink);
+  border-radius: 2px;
+  background: var(--paper);
+  color: var(--ink-soft);
+  font: 500 0.72rem var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.clear:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.merge-note {
+  margin: 0.6rem 0 0;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
 }
 
 /* Screenshots waiting to be read: a strip of contact prints. */
@@ -994,9 +1034,13 @@ button {
     margin-top: 3.5rem;
   }
 
-  .shots .primary {
+  .shot-actions {
     flex-basis: auto;
     margin-left: auto;
+  }
+
+  .shot-actions button {
+    flex: none;
   }
 
   #open-shots {

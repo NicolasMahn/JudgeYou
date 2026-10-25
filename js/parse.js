@@ -50,6 +50,7 @@ const DATE_LINE = new RegExp(`^(?:[A-Za-z]+,?\\s)?${DATE}(?:,?\\s\\(?[A-Za-z]+\\
 const MAX_WEAK_NAME_WORDS = 3;
 const MIN_STAMP_SHARE = 0.05;
 const MIN_STAMPED_LINES = 20;
+const MIN_OWN_STAMPS = 10;
 const SAMPLE_LINES = 3000;
 
 // iOS WhatsApp marks system notices and media with a leading U+200E; other
@@ -140,11 +141,13 @@ function stampShapeFilter(lines, format) {
     counts.set(shape, (counts.get(shape) ?? 0) + 1);
     total++;
   }
-  // Short chats can't tell an odd stamp from a normal one, and exports
-  // occasionally mix shapes (a phone switched to 24-hour time), so any shape
-  // used for a real share of the chat counts as its own.
+  // Short chats can't tell an odd stamp from a normal one. A shape used for a
+  // real share of the chat, or often, is its own too: exports occasionally
+  // mix shapes (a phone switched to 24-hour time), and screenshots read into
+  // the end of an export are written the screenshot reader's way.
   if (total < MIN_STAMPED_LINES) return () => true;
-  const own = new Set([...counts].filter(([, n]) => n >= total * MIN_STAMP_SHARE).map(([shape]) => shape));
+  const isOwn = (n) => n >= total * MIN_STAMP_SHARE || n >= MIN_OWN_STAMPS;
+  const own = new Set([...counts].filter(([, n]) => isOwn(n)).map(([shape]) => shape));
   return (line) => own.has(shapeOf(line));
 }
 

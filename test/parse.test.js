@@ -158,3 +158,11 @@ test('a WhatsApp message pasted into another chat stays inside its message', () 
   assert.deepEqual(participantsOf(messages).map((p) => p.name), ['Nicolas', 'Niklas']);
   assert.match(messages[20].text, /\n\[22:30, 22\.9\.2026\] Ana: wer längere audios/);
 });
+
+test('screenshots read into the end of a long export still count as messages', () => {
+  const exportLines = Array.from({ length: 400 }, (_, i) => `22/09/2026, ${String(10 + (i % 12)).padStart(2, '0')}:00 - ${i % 2 ? 'Niklas' : 'Nicolas'}: ok`);
+  const transcript = Array.from({ length: 12 }, (_, i) => `2026-10-25, 13:${String(i).padStart(2, '0')} - Niklas: neu ${i}`);
+  const messages = parseChat([...exportLines, ...transcript].join('\n'));
+  assert.equal(messages.length, 412);
+  assert.equal(messages.at(-1).text, 'neu 11');
+});
