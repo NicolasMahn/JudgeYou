@@ -18,7 +18,7 @@ async function request(method = 'GET', body) {
 function showUsage({ usage }) {
   document.getElementById('usage').textContent = ['decisions', 'screenshots'].map((kind) => {
     const value = usage[kind];
-    return `${kind === 'decisions' ? 'Judgments' : 'Screenshots'}: ${value.active}/${value.maxConcurrent} active, ${value.usedToday}/${value.perDay} used today; resets ${value.resetsAt}.`;
+    return `${kind === 'decisions' ? 'Judgments' : 'Screenshot uploads'}: ${value.active} of ${value.maxConcurrent} running now, ${value.usedToday} of ${value.perDay} used today. The day resets ${value.resetsAt}.`;
   }).join(' ');
 }
 
