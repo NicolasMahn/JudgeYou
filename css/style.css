@@ -202,19 +202,8 @@ textarea.dragging {
 }
 
 /* The main action spans the screen, within easy reach of a thumb. */
-.verdict,
-.shot-actions {
+.verdict {
   flex-basis: 100%;
-}
-
-.shot-actions {
-  display: flex;
-  gap: 0.6rem;
-}
-
-.shot-actions button {
-  flex: 1;
-  justify-content: center;
 }
 
 /* Consent and the verdict are one act: sign the declaration, then judge. */
@@ -314,12 +303,6 @@ textarea.dragging {
   color: var(--accent);
 }
 
-.merge-note {
-  margin: 0.6rem 0 0;
-  font-size: 0.85rem;
-  color: var(--ink-soft);
-}
-
 /* Screenshots waiting to be read: a strip of contact prints. */
 .shots {
   display: flex;
@@ -354,6 +337,34 @@ textarea.dragging {
   border: 1px solid var(--ink);
   border-radius: 2px;
   background: var(--paper-raised);
+}
+
+/* While they're read, a scan line runs down each screenshot. */
+.shot-list li {
+  overflow: hidden;
+}
+
+.shots.is-reading img {
+  opacity: 0.55;
+}
+
+.shots.is-reading li::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent);
+  animation: scan 1.4s ease-in-out infinite alternate;
+  animation-delay: calc(var(--i, 0) * 120ms);
+}
+
+.shots.is-reading .shot-remove {
+  visibility: hidden;
+}
+
+@keyframes scan {
+  to { transform: translateY(7.8rem); }
 }
 
 .shot-remove {
@@ -592,11 +603,11 @@ button {
   display: flex;
 }
 
-.suspect.is-duo img {
+.suspect.is-pair img {
   width: clamp(5.5rem, 12vw, 9rem);
 }
 
-.suspect.is-duo img + img {
+.suspect.is-pair img + img {
   margin-left: -1.25rem;
 }
 
@@ -1072,15 +1083,6 @@ button {
     grid-template-columns: 11rem minmax(0, 1fr);
     gap: 2rem;
     margin-top: 3.5rem;
-  }
-
-  .shot-actions {
-    flex-basis: auto;
-    margin-left: auto;
-  }
-
-  .shot-actions button {
-    flex: none;
   }
 
   #open-shots {

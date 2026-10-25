@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { assignTypes, countedEffort, normalisedScore } from '../js/verdict.js';
+import { assignTypes, convict, countedEffort, normalisedScore } from '../js/verdict.js';
 
 const answer = (probabilities) => ({ probabilities });
 
@@ -30,4 +30,15 @@ test('effort is counted from words per message, on the same four levels', () => 
   assert.deepEqual([1, 2, 3, 6, 7, 14, 15, 40].map(effort), [0, 0, 1, 1, 2, 2, 3, 3]);
   assert.equal(countedEffort(null), null, 'no counts, no effort');
   assert.equal(normalisedScore(countedEffort({ messages: 10, medianWords: 11 })), 2 / 3);
+});
+
+test('a clear culprit is guilty, a close second shares it, a calm chat gets a person of interest', () => {
+  const people = [{ name: 'Kevin', menace: 42 }, { name: 'Max', menace: 19 }, { name: 'Jule', menace: 25 }];
+  const verdict = (probabilities, who = people) => convict({ probabilities }, who);
+  assert.deepEqual(verdict({ Kevin: 0.37, Max: 0.09, nobody: 0.49 }), { choices: ['Kevin'], strength: 'guilty' });
+  assert.deepEqual(verdict({ Kevin: 0.45, Max: 0.4 }), { choices: ['Kevin', 'Max'], strength: 'guilty' });
+  assert.deepEqual(verdict({ Kevin: 0.09, Max: 0.04, nobody: 0.87 }), { choices: ['Kevin'], strength: 'interest' });
+  const close = [{ name: 'Kevin', menace: 30 }, { name: 'Max', menace: 28 }];
+  assert.deepEqual(verdict({ nobody: 0.9 }, close), { choices: ['Kevin', 'Max'], strength: 'interest' });
+  assert.deepEqual(verdict({ Kevin: 0, Max: 0, nobody: 1 }), { choices: [], strength: 'dismissed' });
 });

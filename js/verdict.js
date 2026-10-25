@@ -39,6 +39,36 @@ export function menaceIndex(answers) {
   return Math.round(total * 100);
 }
 
+// Who heads the verdict. The model may answer "nobody", but a verdict nobody
+// can be blamed for is rarely worth sharing, so only a chat it is all but
+// sure is peaceful is dismissed. Without a clear culprit, the most remarkable
+// person by Menace Index becomes a "person of interest", which blames nobody.
+// Two people close at the top share the verdict.
+const DISMISS_FROM = 0.95;
+const GUILTY_FROM = 0.3;
+const CULPRIT_TIE = 0.1;
+const MENACE_TIE = 3;
+
+/**
+ * `people` are `{ name, menace }`. Returns `{ choices, strength }`: one or two
+ * names and 'guilty', 'interest' or 'dismissed' (choices is then empty).
+ */
+export function convict(culprit, people, nobody = 'nobody') {
+  const p = (name) => culprit.probabilities?.[name] ?? 0;
+  if (p(nobody) >= DISMISS_FROM) return { choices: [], strength: 'dismissed' };
+
+  const byBlame = [...people].sort((a, b) => p(b.name) - p(a.name));
+  const [top, second] = byBlame;
+  if (p(top.name) >= GUILTY_FROM) {
+    const tied = second && p(second.name) >= GUILTY_FROM && p(top.name) - p(second.name) <= CULPRIT_TIE;
+    return { choices: tied ? [top.name, second.name] : [top.name], strength: 'guilty' };
+  }
+
+  const [first, next] = [...people].sort((a, b) => b.menace - a.menace);
+  const tied = next && first.menace - next.menace <= MENACE_TIE;
+  return { choices: tied ? [first.name, next.name] : [first.name], strength: 'interest' };
+}
+
 export function severityOf(index) {
   if (index < 34) return 'low';
   if (index < 67) return 'medium';

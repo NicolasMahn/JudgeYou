@@ -2,7 +2,7 @@ import { parseChat, participantsOf } from './parse.js';
 import { buildRequest, readVerdicts, MAX_SUBJECTS, MIN_MESSAGES_TO_JUDGE, NOBODY, STATE_TOKEN_BUDGET } from './questions.js';
 import { askJudge, forgetChat, readScreenshots } from './api.js';
 import { forgetKept, rememberKept } from './kept.js';
-import { assignTypes, countedEffort, menaceIndex, normalisedScore, severityOf } from './verdict.js';
+import { assignTypes, convict, countedEffort, menaceIndex, normalisedScore, severityOf } from './verdict.js';
 import { chatStats, recordsOf } from './stats.js';
 import { FileError, readChatFile } from './files.js';
 import { MAX_SCREENSHOTS, inTakenOrder, isImage, prepareScreenshot } from './screenshots.js';
@@ -40,8 +40,7 @@ const chat = $('chat');
 const judgeButton = $('judge');
 const namesForm = $('names-form');
 const consent = $('consent');
-const readButton = $('read-shots');
-const readNewButton = $('read-new');
+
 const errorBox = $('error');
 const lab = $('lab');
 const results = $('results');
@@ -56,6 +55,8 @@ const spared = new Set();
 let source = 'paste';
 // Waiting to be read, in chat order: { file, url } with url for the thumbnail.
 let screenshots = [];
+// True while screenshots are being read, before the judging starts.
+let reading = false;
 let installPrompt = null;
 
 // Kept so a language switch can redraw the results without asking again.
@@ -136,7 +137,6 @@ function clearAll() {
   chat.value = '';
   source = 'paste';
   errorBox.hidden = true;
-  $('merge-note').hidden = true;
   onChatChanged();
   showNextStep($('intake'));
 }
@@ -175,7 +175,8 @@ function addFiles(files, { sort = true } = {}) {
   const added = (sort ? inTakenOrder(images) : images).slice(0, Math.max(room, 0));
   screenshots.push(...added.map((file) => ({ file, url: URL.createObjectURL(file) })));
   renderScreenshots();
-  showNextStep($('shots'));
+  // The screenshots, and below them the box to tick and the button to press.
+  $('shots').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 /**
@@ -201,23 +202,13 @@ function renderScreenshots() {
       const remove = Object.assign(document.createElement('button'), { type: 'button', className: 'shot-remove', textContent: '×' });
       remove.setAttribute('aria-label', t('removeScreenshot', { n: i + 1 }));
       remove.addEventListener('click', () => removeScreenshot(i));
+      item.style.setProperty('--i', i);
       item.append(img, remove);
       return item;
     }),
   );
-  // With a chat already in the box, the screenshots can continue it or start
-  // a new one; only the person who took them knows which.
-  const choose = hasOwnChat();
-  readNewButton.hidden = !choose;
-  readButton.textContent = t(choose ? 'readAdd' : 'readScreenshots', { n: screenshots.length });
-  updateReadButton();
+  updateJudgeButton();
   updateClearButton();
-}
-
-function updateReadButton() {
-  const busy = readButton.dataset.busy === 'true';
-  readButton.disabled = !screenshots.length || busy;
-  readNewButton.disabled = busy;
 }
 
 /** A chat someone brought, as opposed to an empty box or our sample. */
@@ -241,47 +232,41 @@ function consented() {
   return false;
 }
 
-/** Reads the waiting screenshots into the box, after the chat there or instead of it. */
-async function readTray({ add }) {
+/**
+ * Reads the waiting screenshots into the box, then judges straight away:
+ * one button for the whole thing. Screenshots that share people with the
+ * chat already there continue it; otherwise they are a new chat.
+ */
+async function judgeScreenshots() {
   if (!consented()) return;
   errorBox.hidden = true;
-  $('merge-note').hidden = true;
-  readButton.dataset.busy = 'true';
-  readButton.textContent = t('readingScreenshots');
-  updateReadButton();
+  reading = true;
+  $('shots').classList.add('is-reading');
+  judgeButton.textContent = t('readingScreenshots');
+  updateJudgeButton();
   try {
     const images = await Promise.all(screenshots.map(({ file }) => prepareScreenshot(file)));
     const transcript = await readScreenshots(images, localDate());
     if (!transcript.trim()) throw new Error(t('errors.noChatInScreenshots'));
-    const appending = add && hasOwnChat();
-    const before = appending ? detected : [];
-    if (appending) {
-      chat.value = `${chat.value.trimEnd()}\n${transcript}`;
-    } else {
-      resetVerdict();
-      chat.value = transcript;
-    }
+    const added = participantsOf(parseChat(transcript)).map((p) => p.name);
+    const continues = hasOwnChat() && added.some((name) => detected.includes(name));
+    resetVerdict();
+    chat.value = continues ? `${chat.value.trimEnd()}\n${transcript}` : transcript;
     source = 'screenshots';
     screenshots.forEach(({ url }) => URL.revokeObjectURL(url));
     screenshots = [];
     onChatChanged();
-    // Adding to the wrong chat is easy to miss; nobody in common gives it away.
-    const added = participantsOf(parseChat(transcript)).map((p) => p.name);
-    if (before.length && added.length && !added.some((name) => before.includes(name))) {
-      $('merge-note').hidden = false;
-      $('merge-undo').onclick = () => {
-        resetVerdict();
-        chat.value = transcript;
-        $('merge-note').hidden = true;
-        onChatChanged();
-      };
-    }
   } catch (error) {
     showError(error.name === 'InvalidStateError' || error.name === 'EncodingError' ? t('errors.unreadableImage') : apiError(error));
+    return;
   } finally {
-    delete readButton.dataset.busy;
+    reading = false;
+    $('shots').classList.remove('is-reading');
+    judgeButton.textContent = t('judge');
     renderScreenshots();
   }
+  // Too few people found leaves the names form or the chat to fix by hand.
+  if (!judgeButton.disabled) judgeChat();
 }
 
 /** Today in the visitor's time zone, as YYYY-MM-DD: the day of the newest screenshot. */
@@ -353,8 +338,10 @@ function renderSubjects() {
   updateJudgeButton();
 }
 
+// Waiting screenshots are judged too: they're read first (judgeScreenshots).
 function updateJudgeButton() {
-  judgeButton.disabled = subjects().length < 2 || (!isRawMode() && messages.length < MIN_MESSAGES_TO_JUDGE);
+  const chatReady = subjects().length >= 2 && (isRawMode() || messages.length >= MIN_MESSAGES_TO_JUDGE);
+  judgeButton.disabled = reading || !(screenshots.length || chatReady);
 }
 
 function showError(message) {
@@ -467,10 +454,10 @@ function renderKept(meta) {
   $('kept-text').textContent = meta.forgotten ? t('forgotten') : t('kept', { code });
 }
 
-function barRow(label, probability) {
+function barRow(label, probability, value = percent(probability)) {
   const row = fromTemplate('bar-row');
   row.querySelector('.who').textContent = label;
-  row.querySelector('.value').textContent = percent(probability);
+  row.querySelector('.value').textContent = value;
   row.querySelector('.fill').dataset.width = percent(probability);
   return row;
 }
@@ -478,8 +465,10 @@ function barRow(label, probability) {
 function renderResults({ judged, culprit, duo, people, stats, meta }, { scroll = true } = {}) {
   const types = assignTypes(people.map((p) => p.answers.type));
   const isDuo = judged.length === 2 && Boolean(duo?.choice);
+  const menaces = people.map((p) => menaceIndex(p.answers));
+  const verdict = convict(culprit, people.map(({ name }, i) => ({ name, menace: menaces[i] })), NOBODY);
   if (isDuo) renderDuo(duo, judged, types, stats);
-  else renderSuspect(culprit, judged, types, people);
+  else renderSuspect(culprit, verdict, judged, types, menaces);
 
   const records = stats ? recordsOf(stats, judged) : [];
   $('records').replaceChildren(...records.map(record));
@@ -494,7 +483,8 @@ function renderResults({ judged, culprit, duo, people, stats, meta }, { scroll =
     openCard({
       link: (names) => shareLink(meta, names),
       duo: isDuo ? duo.choice : null,
-      suspect: culprit.choice,
+      suspects: verdict.choices,
+      strength: verdict.strength,
       people: people.map(({ name, answers }, i) => {
         const menace = menaceIndex(answers);
         return { name, type: types[i].type, menace, severity: severityOf(menace) };
@@ -508,33 +498,50 @@ function renderResults({ judged, culprit, duo, people, stats, meta }, { scroll =
   animateIn();
 }
 
-function renderSuspect(culprit, judged, types, people) {
-  const acquitted = culprit.choice === NOBODY;
-  $('suspect').classList.remove('is-duo');
-  $('suspect').classList.toggle('is-dismissed', acquitted);
-  $('duo-mascot').hidden = true;
-  $('suspect-mascot').hidden = acquitted;
+/**
+ * The head of the verdict for a group: one or two prime suspects, one or two
+ * persons of interest, or nobody (see convict).
+ */
+function renderSuspect(culprit, { choices, strength }, judged, types, menaces) {
+  const pair = choices.length === 2;
+  const typeOf = (name) => types[judged.indexOf(name)].type;
+  $('suspect').classList.toggle('is-pair', pair);
+  $('suspect').classList.toggle('is-dismissed', strength === 'dismissed');
+  $('suspect-mascot').hidden = strength === 'dismissed';
+  $('duo-mascot').hidden = !pair;
   $('suspect-note').hidden = true;
-  $('suspect-kicker').textContent = t('suspect');
-  $('suspect-stamp').textContent = t(acquitted ? 'dismissed' : 'guilty');
-  const stat = { p: culprit.probabilities[culprit.choice].toFixed(2), confidence: culprit.confidence.toFixed(2) };
-  if (acquitted) {
-    $('suspect-name').textContent = t('nobody');
-    $('suspect-stat').textContent = t('peacefulStat', stat);
-  } else {
-    const suspectType = types[people.findIndex((p) => p.name === culprit.choice)].type;
-    $('suspect-mascot').src = mascotOf(suspectType);
-    $('suspect-name').textContent = culprit.choice;
-    $('suspect-stat').textContent = t('suspectStat', { type: typeName(suspectType), ...stat });
-  }
+  if (choices[0]) $('suspect-mascot').src = mascotOf(typeOf(choices[0]));
+  if (pair) $('duo-mascot').src = mascotOf(typeOf(choices[1]));
+
+  const kicker = { guilty: pair ? 'suspects' : 'suspect', interest: pair ? 'interests' : 'interest', dismissed: 'suspect' };
+  const stamp = { guilty: pair ? 'bothGuilty' : 'guilty', interest: 'observed', dismissed: 'dismissed' };
+  $('suspect-kicker').textContent = t(kicker[strength]);
+  $('suspect-stamp').textContent = t(stamp[strength]);
+  $('suspect-name').textContent = strength === 'dismissed' ? t('nobody') : choices.join(' & ');
+
+  const p = (name) => (culprit.probabilities?.[name] ?? 0).toFixed(2);
+  const types2 = choices.map((name) => typeName(typeOf(name))).join(' & ');
+  $('suspect-stat').textContent =
+    strength === 'dismissed'
+      ? t('peacefulStat', { p: p(NOBODY), confidence: culprit.confidence.toFixed(2) })
+      : strength === 'interest'
+        ? t('interestStat', { type: types2, m: choices.map((name) => menaces[judged.indexOf(name)]).join(' & ') })
+        : pair
+          ? `${types2} · p = ${choices.map(p).join(' & ')}`
+          : t('suspectStat', { type: types2, p: p(choices[0]), confidence: culprit.confidence.toFixed(2) });
+
+  // A person of interest is picked by Menace Index, so that is what the bars show.
   $('suspect-bars').replaceChildren(
-    ...[...judged, NOBODY].map((name) => barRow(name === NOBODY ? t('nobody') : name, culprit.probabilities[name] ?? 0)),
+    ...(strength === 'interest'
+      ? [Object.assign(document.createElement('p'), { className: 'bars-label', textContent: t('menace') }),
+         ...judged.map((name, i) => barRow(name, menaces[i] / 100, String(menaces[i])))]
+      : [...judged, NOBODY].map((name) => barRow(name === NOBODY ? t('nobody') : name, culprit.probabilities?.[name] ?? 0))),
   );
 }
 
 /** Two people: a verdict on the pair, and who carries the chat, counted. */
 function renderDuo(duo, judged, types, stats) {
-  $('suspect').classList.add('is-duo');
+  $('suspect').classList.add('is-pair');
   $('suspect').classList.remove('is-dismissed');
   $('suspect-mascot').hidden = false;
   $('duo-mascot').hidden = false;
@@ -700,8 +707,6 @@ for (const [button, input] of [['open-file', 'file'], ['open-shots', 'shot-file'
   });
 }
 
-readButton.addEventListener('click', () => readTray({ add: true }));
-readNewButton.addEventListener('click', () => readTray({ add: false }));
 $('clear').addEventListener('click', clearAll);
 $('own-chat').addEventListener('click', clearAll);
 
@@ -748,7 +753,7 @@ $('forget').addEventListener('click', async () => {
   }
 });
 
-judgeButton.addEventListener('click', judgeChat);
+judgeButton.addEventListener('click', () => (screenshots.length ? judgeScreenshots() : judgeChat()));
 
 namesForm.addEventListener('submit', (event) => {
   event.preventDefault();
