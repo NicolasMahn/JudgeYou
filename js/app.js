@@ -119,6 +119,7 @@ async function loadFile(file) {
     chat.value = await readChatFile(file);
     source = 'file';
     onChatChanged();
+    showNextStep($('judge'));
   } catch (error) {
     showError(error instanceof FileError ? t(`errors.${error.message}`) : error.message);
   }
@@ -140,6 +141,15 @@ function addFiles(files, { sort = true } = {}) {
   const added = (sort ? inTakenOrder(images) : images).slice(0, Math.max(room, 0));
   screenshots.push(...added.map((file) => ({ file, url: URL.createObjectURL(file) })));
   renderScreenshots();
+  showNextStep($('shots'));
+}
+
+/**
+ * Files often arrive from elsewhere (the picker, a share from WhatsApp) while
+ * the page is scrolled away, so bring what to do next into view.
+ */
+function showNextStep(element) {
+  element.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 function removeScreenshot(index) {
@@ -538,12 +548,14 @@ document.addEventListener('paste', (event) => {
   addFiles(images, { sort: false });
 });
 
-$('open-file').addEventListener('click', () => $('file').click());
-$('file').addEventListener('change', () => {
-  const files = [...$('file').files];
-  $('file').value = '';
-  addFiles(files);
-});
+for (const [button, input] of [['open-file', 'file'], ['open-shots', 'shot-file']]) {
+  $(button).addEventListener('click', () => $(input).click());
+  $(input).addEventListener('change', () => {
+    const files = [...$(input).files];
+    $(input).value = '';
+    addFiles(files);
+  });
+}
 
 readButton.addEventListener('click', readTray);
 

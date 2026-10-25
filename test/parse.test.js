@@ -145,3 +145,16 @@ test('ranks participants by message count', () => {
     { name: 'A', messageCount: 1 },
   ]);
 });
+
+test('a WhatsApp message pasted into another chat stays inside its message', () => {
+  const chatter = Array.from({ length: 20 }, (_, i) => `22/09/2026, 21:${String(i).padStart(2, '0')} - ${i % 2 ? 'Niklas' : 'Nicolas'}: ok`);
+  const chat = [
+    ...chatter,
+    '22/09/2026, 22:31 - Niklas: [22:30, 22.9.2026] Ana: wer länger braucht zum antworten',
+    '[22:30, 22.9.2026] Ana: wer längere audios schickt',
+    '22/09/2026, 22:35 - Nicolas: gute idee',
+  ].join('\n');
+  const messages = parseChat(chat);
+  assert.deepEqual(participantsOf(messages).map((p) => p.name), ['Nicolas', 'Niklas']);
+  assert.match(messages[20].text, /\n\[22:30, 22\.9\.2026\] Ana: wer längere audios/);
+});

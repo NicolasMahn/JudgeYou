@@ -73,21 +73,24 @@ function median(values) {
 
 const RECORDS = {
   slowest: { measure: (s) => s.reply?.median, pick: 'max' },
-  fastest: { measure: (s) => s.reply?.median, pick: 'min' },
+  // Between just two people the fastest is whoever isn't the slowest.
+  fastest: { measure: (s) => s.reply?.median, pick: 'min', minContenders: 3 },
   wordiest: { measure: (s) => (s.messages >= MIN_SAMPLE ? s.medianWords : undefined), pick: 'max' },
   starter: { measure: (s) => (s.starts?.of >= MIN_SAMPLE ? s.starts.count : undefined), pick: 'max' },
 };
 
 /**
- * Who holds each record among `names`. A record needs at least two people
- * with a value and a clear winner; a tie crowns nobody.
+ * Who holds each record among `names`. A record needs enough people with a
+ * value (two, unless it says otherwise) and a clear winner; a tie crowns nobody.
+ * People who barely write have no value, so a big chat with two active
+ * members gets the records of a two-person chat.
  */
 export function recordsOf(stats, names) {
-  return Object.entries(RECORDS).flatMap(([key, { measure, pick }]) => {
+  return Object.entries(RECORDS).flatMap(([key, { measure, pick, minContenders = 2 }]) => {
     const entries = names
       .map((name) => ({ name, value: stats.get(name) && measure(stats.get(name)) }))
       .filter(({ value }) => value !== undefined && value !== null);
-    if (entries.length < 2) return [];
+    if (entries.length < minContenders) return [];
     entries.sort((a, b) => (pick === 'max' ? b.value - a.value : a.value - b.value));
     if (entries[0].value === entries[1].value) return [];
     return [{ key, name: entries[0].name, stats: stats.get(entries[0].name) }];

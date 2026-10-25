@@ -38,5 +38,6 @@ test('records need two contenders and a clear winner', () => {
 
   assert.deepEqual(holders(['Ana', 'Ben', 'Cy']), { slowest: 'Cy', fastest: 'Ben', wordiest: 'Ana' });
   assert.ok(!('wordiest' in holders(['Ben', 'Cy'])), 'Ben and Cy tie, so neither is wordier');
+  assert.deepEqual(holders(['Ana', 'Cy']), { slowest: 'Cy', wordiest: 'Ana' }, 'with two, the fastest is just the other one');
   assert.deepEqual(holders(['Ana']), {});
 });

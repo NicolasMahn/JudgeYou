@@ -48,6 +48,8 @@ const STAMP_START = new RegExp(`^\\[?${STAMP}`);
 const STAMP_ANYWHERE = new RegExp(STAMP);
 const DATE_LINE = new RegExp(`^(?:[A-Za-z]+,?\\s)?${DATE}(?:,?\\s\\(?[A-Za-z]+\\)?)?$`);
 const MAX_WEAK_NAME_WORDS = 3;
+const MIN_STAMP_SHARE = 0.05;
+const MIN_STAMPED_LINES = 20;
 const SAMPLE_LINES = 3000;
 
 // iOS WhatsApp marks system notices and media with a leading U+200E; other
@@ -80,6 +82,7 @@ function parseLines(text) {
   if (!format) return [];
 
   const isSpeaker = speakerFilter(lines, format);
+  const isOwnStamp = stampShapeFilter(lines, format);
   const authorAt = format.kind === 'stamp' ? stampAuthors(lines, format) : new Map();
   const authorLines = new Set(authorAt.values());
   const messages = [];
@@ -93,10 +96,10 @@ function parseLines(text) {
     if (match && format.kind === 'stamp') {
       current = { author: lines[authorAt.get(i)] ?? '', text: '', stamp: stampOf(line, format) };
       messages.push(current);
-    } else if (match && format.kind !== 'stamp' && isSpeaker(match[1])) {
+    } else if (match && format.kind !== 'stamp' && isSpeaker(match[1]) && isOwnStamp(line)) {
       current = { author: match[1], text: match[2] ?? '', stamp: stampOf(line, format) };
       messages.push(current);
-    } else if (format.stamped && STAMP_START.test(line)) {
+    } else if (format.stamped && STAMP_START.test(line) && isOwnStamp(line)) {
       // A timestamped line without "Name:" is a system notice, not a continuation.
       current = null;
     } else if (current && line.trim() && !DATE_LINE.test(line.trim())) {
@@ -115,6 +118,34 @@ function stampOf(line, format) {
   if (format.weak) return null;
   const found = (format.kind === 'inline' ? STAMP_START : STAMP_ANYWHERE).exec(line);
   return found?.[0].replace(/^\[/, '') ?? null;
+}
+
+/**
+ * An export writes every stamp the same way, so a line whose stamp is shaped
+ * differently was pasted into a message: a WhatsApp message copied from
+ * another chat starts with "[22:30, 22.9.2026] Name:" and would otherwise
+ * become a message from a person called "22.9.2026]Name".
+ */
+function stampShapeFilter(lines, format) {
+  if (!format.stamped) return () => true;
+  const shapeOf = (line) =>
+    STAMP_START.exec(line)?.[0]
+      .replace(/\d+/g, '0')
+      .replace(new RegExp(MERIDIEM, 'g'), 'm');
+  const counts = new Map();
+  let total = 0;
+  for (const line of lines) {
+    if (!format.re.test(line)) continue;
+    const shape = shapeOf(line);
+    counts.set(shape, (counts.get(shape) ?? 0) + 1);
+    total++;
+  }
+  // Short chats can't tell an odd stamp from a normal one, and exports
+  // occasionally mix shapes (a phone switched to 24-hour time), so any shape
+  // used for a real share of the chat counts as its own.
+  if (total < MIN_STAMPED_LINES) return () => true;
+  const own = new Set([...counts].filter(([, n]) => n >= total * MIN_STAMP_SHARE).map(([shape]) => shape));
+  return (line) => own.has(shapeOf(line));
 }
 
 function bestFormat(lines) {

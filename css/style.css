@@ -354,7 +354,27 @@ textarea.dragging {
   margin-top: 0.75rem;
 }
 
-/* Opening an export is the main way in on a phone, so it looks like a button. */
+/* Screenshots are the main way in, so they get the button. */
+#open-shots {
+  flex-basis: 100%;
+  justify-content: center;
+}
+
+.quiet-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 1.5rem;
+}
+
+.link.quiet {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--ink-soft);
+  text-decoration-color: var(--rule);
+}
+
+/* A real button, for the main way in. */
 .secondary {
   display: inline-flex;
   align-items: center;
@@ -974,20 +994,28 @@ button {
     margin-top: 3.5rem;
   }
 
-  .verdict,
   .shots .primary {
     flex-basis: auto;
     margin-left: auto;
   }
 
+  #open-shots {
+    flex-basis: auto;
+  }
+
+  /* Its own row under a rule, like the signature line at the foot of a form. */
   .verdict {
     flex-direction: row;
+    justify-content: space-between;
     align-items: center;
-    gap: 1.25rem;
+    gap: 1.5rem;
+    margin-top: 0.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--rule);
   }
 
   .pledge {
-    max-width: 21rem;
+    max-width: 34rem;
   }
 
   .lab {
