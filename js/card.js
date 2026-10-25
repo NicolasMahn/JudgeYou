@@ -63,7 +63,9 @@ export function openCard(verdict) {
     const vars = { name: shownOf(suspects[0]), type: typeOf(suspects[0]) };
     return t(strength === 'guilty' ? 'cardShareText' : 'interestShareText', vars);
   };
-  const message = () => `${punchline()} ${link()}`;
+  // The message usually goes back into the chat it judged, so it points to
+  // the whole verdict and to judging another chat, not asking "what about you?".
+  const message = () => `${punchline()}\n${t('shareTail')} ${link()}`;
 
   $('card-share').hidden = !navigator.canShare?.({ files: [new File([], 'x.png', { type: 'image/png' })] });
   $('card-share').onclick = async () => {
