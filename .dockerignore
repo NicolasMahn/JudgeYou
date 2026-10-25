@@ -1,0 +1,6 @@
+# A real key; the server refuses to serve it, but it should not be in the image either.
+js/key.js
+.git
+.github
+test
+data

@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>JudgeYou · Datenschutz / Privacy</title>
+    <link rel="icon" href="img/types/drama_llama.webp" />
+    <link rel="stylesheet" href="css/fonts.css" />
+    <link rel="stylesheet" href="css/theme.css" />
+    <link rel="stylesheet" href="css/style.css" />
+    <script type="module" src="js/privacy.js"></script>
+  </head>
+  <body>
+    <header class="masthead">
+      <strong><a href="./">JudgeYou</a></strong>
+    </header>
+
+    <main class="legal">
+      <section lang="de">
+        <h1>Datenschutz</h1>
+        <p>Verantwortlich ist die im <a href="impressum.html">Impressum</a> genannte Person.</p>
+
+        <h2>Dein Chat</h2>
+        <p>
+          Wenn du auf „Urteilen“ klickst, geht der Chat über unseren Server (Hetzner, Helsinki) an OpenRouter, das
+          ihn an den Anbieter des KI-Modells weiterreicht, derzeit TypeSafe. Beide sitzen in den USA. Das ist nötig,
+          damit JudgeYou funktioniert (Art. 6 Abs. 1 lit. b DSGVO). Du bestätigst, dass du den Chat teilen darfst und die
+          Beteiligten einverstanden sind. Die Zählungen (Nachrichten, Antwortzeiten) passieren nur in deinem Browser.
+        </p>
+        <p>
+          Screenshots werden in deinem Browser verkleinert und auf demselben Weg an ein KI-Modell geschickt, das den
+          Chat abschreibt, derzeit von OpenAI (USA). OpenRouter leitet sie nur an Anbieter weiter, die eingesandte
+          Daten weder speichern noch zum Training nutzen. Zurück kommt nur der Text; die Bilder speichern wir nicht.
+        </p>
+
+        <h2>Was wir bei jeder Anfrage speichern</h2>
+        <p>
+          Zeitpunkt, Sprache, ob der Chat eingefügt, als Datei geöffnet, aus Screenshots gelesen oder das Beispiel war,
+          Anzahl der Personen und Nachrichten, Dauer, Kosten, Modell, Erfolg oder Fehler und die Urteile mit
+          „Person 1, 2 …“ statt Namen.
+          Deine IP-Adresse speichern wir nicht. Wir bilden daraus mit einem täglich wechselnden, nie gespeicherten
+          Schlüssel eine Kennung, damit wir Besucher pro Tag zählen können; über Tage hinweg lässt sie sich nicht
+          verknüpfen. Zweck ist, JudgeYou zu betreiben und zu verbessern (Art. 6 Abs. 1 lit. f DSGVO).
+        </p>
+
+        <h2>Aufbewahrte Chats</h2>
+        <p>
+          Mit dem Häkchen vor dem Urteilen willigst du auch ein, dass wir den Chat speichern, um neue Versionen von
+          JudgeYou damit zu testen und zu vergleichen (Art. 6 Abs. 1 lit. a DSGVO). Nach dem Urteil kannst du ihn mit
+          „Jetzt löschen“ sofort wieder entfernen, oder später mit dem angezeigten Code. Vorher ersetzen wir die Namen der Beteiligten
+          durch „Person 1, 2 …“ und Telefonnummern und E-Mail-Adressen durch Platzhalter. Der Server verschlüsselt den
+          Chat mit einem Schlüssel, den er selbst nicht entschlüsseln kann. Wir bewahren ihn auf, bis du ihn löschst
+          oder uns darum bittest. Das Beispiel wird nie aufbewahrt.
+        </p>
+
+        <h2>Deine Rechte</h2>
+        <p>
+          Du kannst Auskunft, Berichtigung und Löschung verlangen, deine Einwilligung jederzeit widerrufen und dich bei
+          einer Datenschutz-Aufsichtsbehörde beschweren. Chats, die aus diesem Browser aufbewahrt wurden, löschst du
+          unten direkt, alle anderen mit ihrem Löschcode. Wenn du in einem Chat vorkommst, den jemand anderes
+          hochgeladen hat, schreib an die E-Mail-Adresse im <a href="impressum.html">Impressum</a>, ungefähr wann das war, und wir löschen ihn.
+        </p>
+      </section>
+
+      <div id="kept-here" hidden>
+        <p class="fineprint">Aus diesem Browser aufbewahrt / Kept from this browser</p>
+        <ul id="kept-list" class="kept-list"></ul>
+      </div>
+
+      <form id="forget-form" class="names-form">
+        <label for="code">Löschcode / Deletion code</label>
+        <input id="code" autocomplete="off" required placeholder="K7QM-2XWD-9HFA" />
+        <button type="submit">Löschen / Delete</button>
+        <p id="forget-result" class="fineprint" role="status"></p>
+      </form>
+
+      <section lang="en">
+        <h1>Privacy</h1>
+        <p>The person named in the <a href="impressum.html">legal notice</a> is responsible.</p>
+
+        <h2>Your chat</h2>
+        <p>
+          When you click “Judge them”, the chat goes through our server (Hetzner, Helsinki) to OpenRouter, which passes
+          it on to the provider of the AI model, currently TypeSafe. Both are based in the USA. This is needed for
+          JudgeYou to work (Art. 6(1)(b) GDPR). You confirm that you may share the chat and that the people in it agree. The counting (messages, reply
+          times) happens only in your browser.
+        </p>
+        <p>
+          Screenshots are shrunk in your browser and sent the same way to an AI model that transcribes the chat,
+          currently from OpenAI (USA). OpenRouter only passes them to providers that neither store what they are sent
+          nor train on it. Only the text comes back; we don't store the images.
+        </p>
+
+        <h2>What we store for every request</h2>
+        <p>
+          Time, language, whether the chat was pasted, opened from a file, read from screenshots or was the sample, the
+          number of people and messages, duration, cost, model, success or error, and the verdicts with “Person 1, 2…”
+          instead of names.
+          We don't store your IP address. We mix it with a key that changes daily and is never stored, so we can count
+          visitors per day; the result can't be linked across days. The purpose is running and improving JudgeYou
+          (Art. 6(1)(f) GDPR).
+        </p>
+
+        <h2>Kept chats</h2>
+        <p>
+          The box you tick before judging also agrees to us storing the chat, to test and compare new versions of
+          JudgeYou against it (Art. 6(1)(a) GDPR). After the verdict, “Delete it now” removes it right away, and the
+          code shown there removes it later. First, names are replaced with “Person 1, 2…”, and phone numbers and email addresses with
+          placeholders. The server encrypts the chat with a key it cannot decrypt with. We keep it until you delete it or
+          ask us to. The sample is never kept.
+        </p>
+
+        <h2>Your rights</h2>
+        <p>
+          You can ask for access, correction and deletion, withdraw consent at any time, and complain to a data
+          protection authority. Chats kept from this browser can be deleted directly above, any other with its deletion
+          code. If you appear in a chat someone else uploaded, email the address in the <a href="impressum.html">legal notice</a> with roughly when it was, and we will
+          delete it.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

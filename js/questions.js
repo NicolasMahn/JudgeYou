@@ -1,6 +1,8 @@
 import en from './locales/en.js';
 
-export const MODEL = '~typesafe/jev-latest';
+// Requests use the Decisions format: a state plus typed questions, answered
+// with probabilities. The server picks the model (JUDGE_MODEL); the limits
+// below were measured on Jev, the one it uses today.
 
 // Jev allows 32k tokens for the state plus the longest question. Measured on
 // English, German-with-emoji and Japanese chats, one token is ~2.06 UTF-8
@@ -133,7 +135,7 @@ export function buildRequest(chat, subjects, budget = STATE_TOKEN_BUDGET) {
     return {
       judgedCount: null,
       truncated: transcript.length < chat.length,
-      body: { model: MODEL, state: { participants: subjects, transcript }, questions },
+      body: { state: { participants: subjects, transcript }, questions },
     };
   }
 
@@ -141,7 +143,7 @@ export function buildRequest(chat, subjects, budget = STATE_TOKEN_BUDGET) {
   return {
     judgedCount: messages.length,
     truncated: messages.length < chat.length,
-    body: { model: MODEL, state: { messages }, questions },
+    body: { state: { messages }, questions },
   };
 }
 

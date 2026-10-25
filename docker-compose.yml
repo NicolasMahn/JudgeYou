@@ -1,0 +1,25 @@
+services:
+  judgeyou:
+    build: .
+    container_name: judgeyou
+    environment:
+      # .env next to this file, never committed: OPENROUTER_KEY=sk-or-…
+      - OPENROUTER_KEY=${OPENROUTER_KEY:?set OPENROUTER_KEY in .env}
+      - ALLOWED_ORIGINS=https://judge-you.de,https://www.judge-you.de
+    # Node as PID 1 ignores SIGTERM; tini passes it on so stops are instant.
+    init: true
+    restart: unless-stopped
+    volumes:
+      - data:/app/data
+    networks: [edge]
+
+volumes:
+  # The journal. Losing it loses every kept chat, so back it up.
+  data:
+
+# The server's only Caddy belongs to the AV_Stuttgart stack; joining its
+# network lets it proxy judge-you.de here without publishing a port.
+networks:
+  edge:
+    name: av-stuttgart_default
+    external: true

@@ -4,14 +4,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>JudgeYou · A field guide to the people in your group chat</title>
-    <meta name="description" content="Paste a group chat. Jev classifies everyone in it into one of twelve species." />
+    <meta name="description" content="Paste a group chat or its screenshots. Everyone in it is classified into one of twelve species." />
     <link rel="icon" href="img/types/drama_llama.webp" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,400..900,0..100;1,9..144,400..900,0..100&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
-    />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="img/icon-192.png" />
+    <link rel="stylesheet" href="css/fonts.css" />
     <link rel="stylesheet" href="css/theme.css" />
     <link rel="stylesheet" href="css/style.css" />
     <script type="module" src="js/app.js"></script>
@@ -34,7 +31,7 @@
         <div id="species-track" class="species-track"></div>
       </div>
 
-      <section class="intake">
+      <section id="intake" class="intake">
         <div class="intake-label"><b data-i18n="exhibit">Exhibit A</b><span data-i18n="evidence">The evidence</span></div>
         <div>
           <textarea
@@ -42,32 +39,38 @@
             spellcheck="false"
             data-i18n-attr="aria-label: chatLabel; placeholder: chatPlaceholder"
           ></textarea>
+          <div id="shots" class="shots" hidden>
+            <ol id="shot-list" class="shot-list"></ol>
+            <button id="read-shots" class="primary" type="button"></button>
+          </div>
           <div id="subjects" class="subjects" aria-live="polite"></div>
           <div class="intake-bar">
             <button id="open-file" class="secondary" type="button">
               <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 16V4m0 0L7 9m5-5 5 5M5 14v5h14v-5" /></svg>
               <span data-i18n="openFile"></span>
             </button>
-            <input id="file" type="file" hidden accept=".txt,.zip,.json,.html,.htm,.csv,.tsv,text/plain,application/zip,application/json,text/html,text/csv" />
+            <input
+              id="file"
+              type="file"
+              multiple
+              hidden
+              accept=".txt,.zip,.json,.html,.htm,.csv,.tsv,text/plain,application/zip,application/json,text/html,text/csv,image/png,image/jpeg,image/webp,image/heic"
+            />
             <button id="sample" class="link" type="button" data-i18n="sample"></button>
-            <button id="judge" class="primary" type="button" disabled data-i18n="judge"></button>
+            <div class="verdict">
+              <label class="pledge">
+                <input id="consent" type="checkbox" />
+                <span data-i18n-html="consent"></span>
+              </label>
+              <button id="judge" class="primary" type="button" disabled data-i18n="judge"></button>
+            </div>
           </div>
           <form id="names-form" class="names-form" hidden>
             <label for="names" data-i18n="namesLabel"></label>
             <input id="names" autocomplete="off" data-i18n-attr="placeholder: namesPlaceholder" />
             <button type="submit" data-i18n="namesSubmit"></button>
           </form>
-          <form id="key-form" class="key-form" hidden>
-            <input
-              id="key"
-              type="password"
-              autocomplete="off"
-              required
-              data-i18n-attr="placeholder: keyPlaceholder; aria-label: keyLabel"
-            />
-            <button type="submit" data-i18n="keySubmit"></button>
-          </form>
-          <p class="fineprint" data-i18n="fineprint"></p>
+          <button id="install" class="link install" type="button" hidden data-i18n="install"></button>
           <p id="error" class="error" role="alert" hidden></p>
         </div>
       </section>
@@ -88,16 +91,24 @@
           <div id="suspect-bars" class="bars"></div>
           <div class="stamp" data-i18n="guilty"></div>
         </article>
+        <div class="verdict-actions">
+          <button id="share" class="primary" type="button" data-i18n="share"></button>
+          <p id="kept" class="kept" hidden>
+            <span id="kept-text"></span> <button id="forget" class="link" type="button" data-i18n="forget"></button>
+          </p>
+        </div>
         <div id="records" class="records"></div>
         <div id="plates" class="plates"></div>
-        <div class="results-foot">
-          <p id="footnote" class="footnote"></p>
-          <button id="share" class="primary" type="button" data-i18n="share"></button>
-        </div>
       </section>
     </main>
 
-    <footer class="colophon" data-i18n="colophon"></footer>
+    <footer class="colophon">
+      <span data-i18n="colophon"></span>
+      <nav class="colophon-links">
+        <a href="impressum.html" data-i18n="imprint"></a>
+        <a href="privacy.html" data-i18n="privacy"></a>
+      </nav>
+    </footer>
 
     <dialog id="card-dialog" class="card-dialog">
       <canvas id="card-canvas" width="1080" height="1350"></canvas>

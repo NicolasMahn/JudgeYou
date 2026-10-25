@@ -1,18 +1,36 @@
 # JudgeYou
 
 A one-page field guide that judges the people in a group chat, pseudo-scientifically.
-It sends the chat to [Jev](https://docs.typesafe.ai/), TypeSafe's decision model,
-through OpenRouter's Decisions endpoint, and gets calibrated probabilities back
-instead of prose. Each person is classified as one of twelve types, each with an
-engraved mascot. Everything runs in the browser; there is no backend.
+A decision model answers narrow questions about each person with probabilities
+instead of prose, through OpenRouter's Decisions endpoint. Each person is
+classified as one of twelve types, each with an engraved mascot. Everything runs
+in the browser except the model requests, which go through a small server so the
+OpenRouter key never reaches visitors. The page never names the model: the
+server picks it (`JUDGE_MODEL`, today [Jev](https://docs.typesafe.ai/) from
+TypeSafe), so it can change without touching the page.
 
 Chats can be pasted, dropped or opened as exports from WhatsApp (also the ZIP
 "with media"), Telegram (JSON, HTML, copy-paste), Messenger and Instagram,
 Discord, Slack, Teams, iMessage exporters, IRC, LINE, KakaoTalk, CSV, or plain
 `Name: message` text. If the format isn't recognised, the page asks who is in
-the chat and Jev reads the raw text.
+the chat and the model reads the raw text.
 
-Next to Jev's verdicts, the page shows numbers it counts itself, without any
+Screenshots work too: pasted, dropped or picked, up to 10 at once. The page
+shrinks them to JPEG, the server has a vision model (`SCREENSHOT_MODEL`, today
+`openai/gpt-6-luna`, about $0.0005 for five screenshots) copy them out as
+`HH:MM - Author: text` lines, and the transcript lands in the text box, where
+it can be checked and fixed before judging. Screenshots rarely show dates, so
+`server/transcribe.js` adds them: a time earlier than the one before means a
+new day, counted back from today. The images are never stored.
+
+Installed as an app (Chrome on Android offers it; the page shows an install
+link), JudgeYou appears in the share menu, so WhatsApp's "Export chat" and the
+gallery's share button can send to it directly. `manifest.webmanifest`
+declares the share target; `sw.js` receives the files, parks them in a cache
+for the page and touches nothing else. iOS doesn't let web apps receive
+shares; there, people save the export to Files and open it.
+
+Next to the model's verdicts, the page shows numbers it counts itself, without any
 request: messages, median words per message and median reply time. A reply is
 the gap between someone else's last message and a person's next one; after 6
 hours of silence the next message starts a new conversation instead. Medians
@@ -29,27 +47,60 @@ language and switchable in the header.
 ## Run locally
 
 ```sh
-echo "export const OPENROUTER_KEY = 'sk-or-…';" > js/key.js   # git-ignored
-npm start        # serves http://localhost:8000
+OPENROUTER_KEY=sk-or-… npm start   # serves http://localhost:8000
 npm test
 ```
 
-Without `js/key.js`, the page asks for a key and keeps it in `localStorage`.
+## Server
+
+`server/server.js` serves the page and forwards `POST /api/decisions` to
+OpenRouter with its own key, always with its own model, so a page can't spend
+the key on a pricier one. `POST /api/screenshots` only accepts images and
+always sends the same transcription prompt. Both only answer the page's
+origin, and `server/limits.js` caps requests per visitor per hour and in total
+per day (`LIMIT_PER_IP_PER_HOUR`, `LIMIT_PER_DAY`), separately for each. A script can fake the
+origin, so the caps are what bound the cost; give the key a credit limit on
+OpenRouter as well.
+
+Every forwarded request becomes one row in an SQLite journal
+(`data/judgeyou.db`, see `server/store.js`): metadata and the model's answers, with
+names replaced by "Person 1, 2…". The IP is never stored, only a per-day
+visitor ID. When the visitor leaves "keep it" ticked, the request itself is
+kept too, with names, phone numbers and emails replaced (`server/scrub.js`),
+and sealed with `server/chats-public.pem` (`server/seal.js`). The server can't
+read what it kept; the private key lives only in
+`~/.config/judgeyou/chats-private.pem` on the operator's machine. Back that
+key up: without it, the kept chats are gone for good.
+
+Replacing names only catches the people in the chat, so a friend mentioned by
+name stays readable inside the sealed chat.
+
+To read the kept chats, pull a copy and unseal it locally:
+
+```sh
+ssh root@judge-you.de docker exec judgeyou node server/export.js > copy.db
+node scripts/read-chats.js copy.db > chats.jsonl
+```
 
 ## Deploy
 
-Pushing to `main` deploys to GitHub Pages (Settings → Pages → Source: GitHub Actions).
-If the repository has an `OPENROUTER_KEY` secret, the workflow bakes it into the
-deployed `js/key.js`. Anyone can read it from there, so use a separate key with a
-low credit limit.
+The site runs at https://judge-you.de on the Hetzner server, next to
+AV_Stuttgart, whose Caddy terminates HTTPS and proxies to the `judgeyou`
+container over the shared Docker network. Pushing to `main` runs the tests and
+then, over SSH, rebuilds the container in `/opt/judgeyou` (secrets
+`DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY`). The key lives only in
+`/opt/judgeyou/.env` on the server.
 
 ## Where things live
 
 - `js/parse.js`, `js/parse-structured.js`: chat formats. `js/stamps.js`: their timestamps.
-- `js/files.js`: opening files, including WhatsApp ZIPs.
+- `js/files.js`: opening files, including WhatsApp ZIPs. `js/screenshots.js`: preparing screenshots.
+- `server/transcribe.js`: reading screenshots, and dating what they show.
 - `js/stats.js`: the counted numbers and records.
 - `js/card.js`: the share image.
-- `js/questions.js`: what Jev is asked. One request judges everyone at once.
+- `js/questions.js`: what the model is asked. One request judges everyone at once.
+- `js/sample.js`: the sample chats. Their verdicts are judged once (`scripts/sample-verdicts.js` writes `js/sample-answers.js`) and replayed when a chat is exactly a sample, with no request.
+- `server/models.js`: which models run (`JUDGE_MODEL`, `SCREENSHOT_MODEL`).
 - `js/verdict.js`: how answers combine into the Menace Index (weights are ours).
 - `js/presentation.js`: the twelve types, mascots (`img/types/`) and number formats.
 - `js/locales/`: every visible string, one file per language; `js/i18n.js` picks one.

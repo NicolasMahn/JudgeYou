@@ -1,9 +1,11 @@
 import { parseChat, participantsOf } from './parse.js';
 import { buildRequest, readVerdicts, MAX_SUBJECTS, STATE_TOKEN_BUDGET } from './questions.js';
-import { askJev, findApiKey, forgetApiKey, isApiKey, rememberApiKey } from './jev.js';
+import { askJudge, forgetChat, readScreenshots } from './api.js';
+import { forgetKept, rememberKept } from './kept.js';
 import { assignTypes, menaceIndex, normalisedScore, severityOf } from './verdict.js';
 import { chatStats, recordsOf } from './stats.js';
 import { FileError, readChatFile } from './files.js';
+import { MAX_SCREENSHOTS, inTakenOrder, isImage, prepareScreenshot } from './screenshots.js';
 import { openCard } from './card.js';
 import { LANGUAGES, lang, setLanguage, t, translatePage } from './i18n.js';
 import {
@@ -20,32 +22,39 @@ import {
   typeName,
   typeNote,
 } from './presentation.js';
-import { SAMPLE_CHAT } from './sample.js';
+import { SAMPLES } from './sample.js';
+import { believableDelay, storedAnswers } from './sample-verdicts.js';
 
 const LAB_LINE_MS = 340;
 const LAB_FLICKER_MS = 110;
 
-// Jev answers in well under a second; a short minimum lets the verdict land
-// with some ceremony instead of flickering past.
+// The verdict often comes back in well under a second; a short minimum lets
+// it land with some ceremony instead of flickering past.
 const MIN_LAB_MS = 1800;
 
 const $ = (id) => document.getElementById(id);
 const chat = $('chat');
 const judgeButton = $('judge');
 const namesForm = $('names-form');
-const keyForm = $('key-form');
+const consent = $('consent');
+const readButton = $('read-shots');
 const errorBox = $('error');
 const lab = $('lab');
 const results = $('results');
 
-// When the format isn't recognised, the user names the people and Jev reads
-// the raw text instead of parsed messages.
+// When the format isn't recognised, the user names the people and the model
+// reads the raw text instead of parsed messages.
 let messages = [];
 let detected = [];
 let typedNames = [];
 const spared = new Set();
+// Journaled with each request; the sample is never kept.
+let source = 'paste';
+// Waiting to be read, in chat order: { file, url } with url for the thumbnail.
+let screenshots = [];
+let installPrompt = null;
 
-// Kept so a language switch can redraw the results without asking Jev again.
+// Kept so a language switch can redraw the results without asking again.
 let lastVerdict = null;
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -79,6 +88,7 @@ function renderLanguagePicker() {
     translatePage();
     renderSpeciesStrip();
     renderSubjects();
+    renderScreenshots();
     if (lastVerdict) renderResults(lastVerdict, { scroll: false });
   });
 }
@@ -107,10 +117,117 @@ async function loadFile(file) {
   errorBox.hidden = true;
   try {
     chat.value = await readChatFile(file);
+    source = 'file';
     onChatChanged();
   } catch (error) {
     showError(error instanceof FileError ? t(`errors.${error.message}`) : error.message);
   }
+}
+
+/**
+ * One way in for everything people drop, paste, pick or share: screenshots
+ * wait in the tray to be read together, anything else is opened as an export.
+ */
+function addFiles(files, { sort = true } = {}) {
+  errorBox.hidden = true;
+  const images = files.filter(isImage);
+  const exports = files.filter((file) => !isImage(file));
+  if (exports.length) loadFile(exports[0]);
+  if (!images.length) return;
+
+  const room = MAX_SCREENSHOTS - screenshots.length;
+  if (images.length > room) showError(t('errors.tooManyScreenshots', { n: MAX_SCREENSHOTS }));
+  const added = (sort ? inTakenOrder(images) : images).slice(0, Math.max(room, 0));
+  screenshots.push(...added.map((file) => ({ file, url: URL.createObjectURL(file) })));
+  renderScreenshots();
+}
+
+function removeScreenshot(index) {
+  URL.revokeObjectURL(screenshots[index].url);
+  screenshots.splice(index, 1);
+  renderScreenshots();
+}
+
+function renderScreenshots() {
+  $('shots').hidden = !screenshots.length;
+  $('shot-list').replaceChildren(
+    ...screenshots.map(({ url }, i) => {
+      const item = document.createElement('li');
+      const img = Object.assign(new Image(), { src: url, alt: t('screenshot', { n: i + 1 }) });
+      const remove = Object.assign(document.createElement('button'), { type: 'button', className: 'shot-remove', textContent: '×' });
+      remove.setAttribute('aria-label', t('removeScreenshot', { n: i + 1 }));
+      remove.addEventListener('click', () => removeScreenshot(i));
+      item.append(img, remove);
+      return item;
+    }),
+  );
+  readButton.textContent = t('readScreenshots', { n: screenshots.length });
+  updateReadButton();
+}
+
+function updateReadButton() {
+  readButton.disabled = !screenshots.length || readButton.dataset.busy === 'true';
+}
+
+/**
+ * Sending a chat anywhere needs the box ticked; our own sample doesn't.
+ * Instead of a button that is greyed out for no visible reason, the box
+ * itself asks to be ticked.
+ */
+function consented() {
+  if (consent.checked) return true;
+  const pledge = consent.closest('.pledge');
+  pledge.classList.remove('wanted');
+  // Reflow, so the nudge plays again on every click.
+  void pledge.offsetWidth;
+  pledge.classList.add('wanted');
+  consent.focus();
+  return false;
+}
+
+async function readTray() {
+  if (!consented()) return;
+  errorBox.hidden = true;
+  readButton.dataset.busy = 'true';
+  readButton.textContent = t('readingScreenshots');
+  updateReadButton();
+  try {
+    const images = await Promise.all(screenshots.map(({ file }) => prepareScreenshot(file)));
+    const transcript = await readScreenshots(images, localDate());
+    if (!transcript.trim()) throw new Error(t('errors.noChatInScreenshots'));
+    chat.value = chat.value.trim() ? `${chat.value.trimEnd()}\n${transcript}` : transcript;
+    source = 'screenshots';
+    screenshots.forEach(({ url }) => URL.revokeObjectURL(url));
+    screenshots = [];
+    onChatChanged();
+  } catch (error) {
+    showError(error.name === 'InvalidStateError' || error.name === 'EncodingError' ? t('errors.unreadableImage') : apiError(error));
+  } finally {
+    delete readButton.dataset.busy;
+    renderScreenshots();
+  }
+}
+
+/** Today in the visitor's time zone, as YYYY-MM-DD: the day of the newest screenshot. */
+function localDate() {
+  const now = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+}
+
+/** Files shared to the installed app, parked by sw.js until the page loads. */
+async function takeSharedFiles() {
+  if (!new URLSearchParams(location.search).has('shared') || !('caches' in window)) return;
+  history.replaceState(null, '', location.pathname);
+  const cache = await caches.open('judgeyou-shared');
+  const files = [];
+  for (const request of await cache.keys()) {
+    const response = await cache.match(request);
+    const name = decodeURIComponent(response.headers.get('X-File-Name') ?? 'shared');
+    files.push(new File([await response.blob()], name, { type: response.headers.get('Content-Type') ?? '' }));
+  }
+  await caches.delete('judgeyou-shared');
+  if (files.length) addFiles(files);
 }
 
 function renderSubjects() {
@@ -133,12 +250,22 @@ function renderSubjects() {
 
   const unjudged = candidates().length - spared.size - subjects().length;
   if (unjudged > 0) box.append(t('spared', { n: unjudged }));
+  updateJudgeButton();
+}
+
+function updateJudgeButton() {
   judgeButton.disabled = subjects().length < 2;
 }
 
 function showError(message) {
   errorBox.textContent = message;
   errorBox.hidden = false;
+}
+
+// The server's limits explain themselves better than a status code would.
+function apiError(error) {
+  if (error.status === 429) return t('errors.tooMany');
+  return error.status ? t('errors.refused', { status: error.status, reason: error.reason }) : error.message;
 }
 
 function runLab() {
@@ -170,70 +297,71 @@ function runLab() {
 }
 
 async function judgeChat() {
-  errorBox.hidden = true;
-  const apiKey = await findApiKey();
-  if (!apiKey) {
-    keyForm.hidden = false;
-    $('key').focus();
-    return;
-  }
-
   const judged = subjects();
+  const stored = storedAnswers(chat.value, judged);
+  // Our own samples hold nobody's chat, so they need no consent.
+  if (!stored && source !== 'sample' && !consented()) return;
+  errorBox.hidden = true;
   const rawMode = isRawMode();
   const evidence = rawMode ? chat.value : messages;
-  keyForm.hidden = true;
   results.hidden = true;
   judgeButton.disabled = true;
   const stopLab = runLab();
 
   try {
-    const timedAsk = async () => {
-      const started = performance.now();
-      const { request, response } = await askWithinLimit(apiKey, evidence, judged);
-      return { request, response, ms: Math.round(performance.now() - started) };
-    };
-    const [{ request, response, ms }] = await Promise.all([timedAsk(), wait(MIN_LAB_MS)]);
+    const [{ response, deletionCode }] = stored
+      ? [{ response: { answers: stored }, deletionCode: null }, await wait(believableDelay())]
+      : await Promise.all([askWithinLimit(evidence, judged, rawMode), wait(MIN_LAB_MS)]);
     stopLab();
     lastVerdict = {
       judged,
       ...readVerdicts(response.answers, judged),
-      // Counted over the whole chat, not just the part Jev could read.
+      // Counted over the whole chat, not just the part the model could read.
       stats: rawMode ? null : chatStats(messages),
-      meta: {
-        judgedCount: request.judgedCount,
-        totalCount: rawMode ? null : messages.length,
-        truncated: request.truncated,
-        ms,
-        model: response.model,
-        cost: response.usage?.cost,
-      },
+      // Counts, timing and cost are journaled on the server, not shown.
+      meta: { deletionCode },
     };
+    if (deletionCode) rememberKept({ code: deletionCode, at: new Date().toISOString(), people: judged.length });
     renderResults(lastVerdict);
   } catch (error) {
     stopLab();
-    if (error.status === 401) {
-      forgetApiKey();
-      keyForm.hidden = false;
-    }
-    showError(error.status ? t('errors.jev', { status: error.status, reason: error.reason }) : error.message);
+    showError(apiError(error));
   } finally {
-    judgeButton.disabled = subjects().length < 2;
+    updateJudgeButton();
   }
 }
 
 /**
  * The token estimate is deliberately pessimistic, but an unusual chat can
- * still exceed Jev's limit; then retry once with a much smaller slice.
+ * still exceed the model's limit; then retry once with a much smaller slice.
  */
-async function askWithinLimit(apiKey, evidence, judged) {
-  let request = buildRequest(evidence, judged);
+async function askWithinLimit(evidence, judged, rawMode) {
+  const ask = async (request, attempt) => {
+    const context = {
+      lang,
+      source,
+      totalMessages: rawMode ? null : messages.length,
+      truncated: request.truncated,
+      attempt,
+    };
+    // The one consent box also agrees to keeping the chat without names.
+    const { payload, deletionCode } = await askJudge(request.body, { keep: true, context });
+    return { request, response: payload, deletionCode };
+  };
   try {
-    return { request, response: await askJev(apiKey, request.body) };
+    return await ask(buildRequest(evidence, judged), 1);
   } catch (error) {
     if (error.type !== 'max_tokens_exceeded') throw error;
-    request = buildRequest(evidence, judged, STATE_TOKEN_BUDGET / 2);
-    return { request, response: await askJev(apiKey, request.body) };
+    return ask(buildRequest(evidence, judged, STATE_TOKEN_BUDGET / 2), 2);
   }
+}
+
+function renderKept(meta) {
+  $('kept').hidden = !meta.deletionCode && !meta.forgotten;
+  $('forget').hidden = Boolean(meta.forgotten);
+  // Non-breaking hyphens keep the code on one line, where it can be read off.
+  const code = meta.deletionCode?.replaceAll('-', '\u2011');
+  $('kept-text').textContent = meta.forgotten ? t('forgotten') : t('kept', { code });
 }
 
 function barRow(label, probability) {
@@ -262,14 +390,7 @@ function renderResults({ judged, culprit, people, stats, meta }, { scroll = true
 
   $('plates').replaceChildren(...people.map((person, i) => plate(person, i, types[i], stats?.get(person.name))));
 
-  const evidence =
-    meta.judgedCount === null
-      ? t(meta.truncated ? 'evidenceRawTruncated' : 'evidenceRaw')
-      : meta.truncated
-        ? t('evidenceTruncated', { n: meta.judgedCount, total: meta.totalCount })
-        : t('evidenceAll', { n: meta.judgedCount });
-  const cost = meta.cost === undefined ? '' : ` · $${meta.cost.toFixed(6)}`;
-  $('footnote').textContent = `${evidence} · ${meta.model} · ${meta.ms} ms${cost}`;
+  renderKept(meta);
 
   $('share').onclick = () =>
     openCard({
@@ -358,7 +479,7 @@ function scale(key, answer) {
   meter.querySelector('.scale-level').textContent = levels[Math.round(answer.score)];
 
   if (answer.probabilities) {
-    // Jev's legend is in English; its levels are in the same order as ours.
+    // The model's legend is in English; its levels are in the same order as ours.
     meter.querySelector('.track').dataset.tip = Object.keys(answer.legend)
       .map((level, i) => `${percent(answer.probabilities[level] ?? 0).padStart(4)}  ${levels[i]}`)
       .join('\n');
@@ -390,30 +511,81 @@ translatePage();
 renderLanguagePicker();
 renderSpeciesStrip();
 
-chat.addEventListener('input', onChatChanged);
+chat.addEventListener('input', () => {
+  source = 'paste';
+  onChatChanged();
+});
 
-chat.addEventListener('dragover', (event) => {
+const intake = $('intake');
+intake.addEventListener('dragover', (event) => {
   event.preventDefault();
   chat.classList.add('dragging');
 });
-chat.addEventListener('dragleave', () => chat.classList.remove('dragging'));
-chat.addEventListener('drop', (event) => {
+intake.addEventListener('dragleave', (event) => {
+  if (!intake.contains(event.relatedTarget)) chat.classList.remove('dragging');
+});
+intake.addEventListener('drop', (event) => {
   event.preventDefault();
   chat.classList.remove('dragging');
-  const file = event.dataTransfer.files[0];
-  if (file) loadFile(file);
+  addFiles([...event.dataTransfer.files]);
+});
+
+// Screenshots can be pasted anywhere on the page; text pastes stay normal.
+document.addEventListener('paste', (event) => {
+  const images = [...event.clipboardData.files].filter(isImage);
+  if (!images.length) return;
+  event.preventDefault();
+  addFiles(images, { sort: false });
 });
 
 $('open-file').addEventListener('click', () => $('file').click());
 $('file').addEventListener('change', () => {
-  const file = $('file').files[0];
+  const files = [...$('file').files];
   $('file').value = '';
-  if (file) loadFile(file);
+  addFiles(files);
 });
 
+readButton.addEventListener('click', readTray);
+
+// Installing is what puts JudgeYou in the share menu of WhatsApp and others.
+window.addEventListener('beforeinstallprompt', (event) => {
+  event.preventDefault();
+  installPrompt = event;
+  $('install').hidden = false;
+});
+$('install').addEventListener('click', async () => {
+  await installPrompt?.prompt();
+  installPrompt = null;
+  $('install').hidden = true;
+});
+window.addEventListener('appinstalled', () => ($('install').hidden = true));
+
+navigator.serviceWorker?.register('/sw.js');
+takeSharedFiles();
+
+// Each click brings the next sample; after the first, the button says so.
+let nextSample = 0;
 $('sample').addEventListener('click', () => {
-  chat.value = SAMPLE_CHAT;
+  chat.value = SAMPLES[nextSample].chat;
+  nextSample = (nextSample + 1) % SAMPLES.length;
+  source = 'sample';
+  $('sample').dataset.i18n = 'sampleNext';
+  $('sample').textContent = t('sampleNext');
   onChatChanged();
+});
+
+consent.addEventListener('change', () => consent.closest('.pledge').classList.remove('wanted'));
+
+$('forget').addEventListener('click', async () => {
+  const { meta } = lastVerdict;
+  try {
+    await forgetChat(meta.deletionCode);
+    forgetKept(meta.deletionCode);
+    meta.forgotten = true;
+    renderKept(meta);
+  } catch (error) {
+    showError(apiError(error));
+  }
 });
 
 judgeButton.addEventListener('click', judgeChat);
@@ -425,13 +597,3 @@ namesForm.addEventListener('submit', (event) => {
   renderSubjects();
 });
 
-keyForm.addEventListener('submit', (event) => {
-  event.preventDefault();
-  const key = $('key').value.trim();
-  if (!isApiKey(key)) {
-    showError(t('errors.badKey'));
-    return;
-  }
-  rememberApiKey(key);
-  judgeChat();
-});
