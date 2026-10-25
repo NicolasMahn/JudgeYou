@@ -11,6 +11,7 @@ COPY server server
 RUN mkdir data && chown node data
 USER node
 ENV PORT=8000
+ENV NODE_ENV=production
 EXPOSE 8000
 # node:sqlite still prints an experimental warning on every start.
 CMD ["node", "--disable-warning=ExperimentalWarning", "server/server.js"]

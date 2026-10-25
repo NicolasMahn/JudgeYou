@@ -37,6 +37,7 @@ export function openStore(path) {
     if (!columns.has(name)) db.exec(`ALTER TABLE judgments ADD COLUMN ${name} ${type}`);
   }
   db.exec('CREATE UNIQUE INDEX IF NOT EXISTS judgments_result_id ON judgments (result_id)');
+  db.exec('CREATE INDEX IF NOT EXISTS judgments_deletion_hash ON judgments (deletion_hash) WHERE deletion_hash IS NOT NULL');
   const insert = db.prepare(`
     INSERT INTO judgments (at, visitor, lang, source, raw, people, messages_sent, messages_total,
       truncated, attempt, status, ms, model, cost, answers, chat, deletion_hash, result_id, stats)

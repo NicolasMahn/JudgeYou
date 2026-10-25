@@ -6,7 +6,6 @@ import { assignTypes, convict, countedEffort, menaceIndex, normalisedScore, seve
 import { chatStats, recordsOf } from './stats.js';
 import { FileError, readChatFile } from './files.js';
 import { MAX_SCREENSHOTS, inTakenOrder, isImage, prepareScreenshot } from './screenshots.js';
-import { openCard } from './card.js';
 import { LANGUAGES, lang, setLanguage, t, translatePage } from './i18n.js';
 import {
   FINDING_KEYS,
@@ -25,15 +24,14 @@ import {
   duoNote,
 } from './presentation.js';
 import { SAMPLES } from './sample.js';
-import { believableDelay, storedAnswers } from './sample-verdicts.js';
+import { storedAnswers } from './sample-verdicts.js';
 import { loadShared, shareLink, sharedId } from './share.js';
 
 const LAB_LINE_MS = 340;
 const LAB_FLICKER_MS = 110;
 
-// The verdict often comes back in well under a second; a short minimum lets
-// it land with some ceremony instead of flickering past.
-const MIN_LAB_MS = 1800;
+const LARGE_CHAT_LENGTH = 100_000;
+const CHAT_EDIT_DELAY_MS = 150;
 
 const $ = (id) => document.getElementById(id);
 const chat = $('chat');
@@ -57,12 +55,12 @@ let source = 'paste';
 let screenshots = [];
 // True while screenshots are being read, before the judging starts.
 let reading = false;
+let judging = false;
 let installPrompt = null;
 
 // Kept so a language switch can redraw the results without asking again.
 let lastVerdict = null;
-
-const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+let chatChangeTimer = null;
 
 function fromTemplate(id) {
   return $(id).content.firstElementChild.cloneNode(true);
@@ -88,13 +86,21 @@ function renderSpeciesStrip() {
 function renderLanguagePicker() {
   const picker = $('language');
   picker.replaceChildren(...Object.entries(LANGUAGES).map(([code, name]) => new Option(name, code, false, code === lang)));
-  picker.addEventListener('change', () => {
-    setLanguage(picker.value);
-    translatePage();
-    renderSpeciesStrip();
-    renderSubjects();
-    renderScreenshots();
-    if (lastVerdict) renderResults(lastVerdict, { scroll: false });
+  picker.addEventListener('change', async () => {
+    picker.disabled = true;
+    try {
+      await setLanguage(picker.value);
+      translatePage();
+      renderSpeciesStrip();
+      renderSubjects();
+      renderScreenshots();
+      if (lastVerdict) renderResults(lastVerdict, { scroll: false });
+    } catch (error) {
+      showError(error.message);
+    } finally {
+      picker.value = lang;
+      picker.disabled = false;
+    }
   });
 }
 
@@ -111,6 +117,8 @@ function subjects() {
 }
 
 function onChatChanged() {
+  clearTimeout(chatChangeTimer);
+  chatChangeTimer = null;
   messages = parseChat(chat.value);
   detected = participantsOf(messages).map((p) => p.name);
   spared.clear();
@@ -345,7 +353,7 @@ function renderSubjects() {
 // Waiting screenshots are judged too: they're read first (judgeScreenshots).
 function updateJudgeButton() {
   const chatReady = subjects().length >= 2 && (isRawMode() || messages.length >= MIN_MESSAGES_TO_JUDGE);
-  judgeButton.disabled = reading || !(screenshots.length || chatReady);
+  judgeButton.disabled = reading || judging || chatChangeTimer !== null || !(screenshots.length || chatReady);
 }
 
 function showError(message) {
@@ -388,24 +396,28 @@ function runLab() {
 }
 
 async function judgeChat() {
+  if (judging) return;
+  judging = true;
+  updateJudgeButton();
   const judged = subjects();
-  const stored = storedAnswers(chat.value, judged);
-  // Our own samples hold nobody's chat, so they need no consent.
-  if (!stored && source !== 'sample' && !consented()) return;
-  errorBox.hidden = true;
+  const selectedChat = chat.value;
+  const selectedSource = source;
   const rawMode = isRawMode();
-  const evidence = rawMode ? chat.value : messages;
-  // Counted over the whole chat, not just the part the model could read.
-  const stats = rawMode ? null : chatStats(messages);
-  results.hidden = true;
-  judgeButton.disabled = true;
-  const stopLab = runLab();
-
+  const evidence = rawMode ? selectedChat : messages;
+  const context = { lang, source: selectedSource, totalMessages: rawMode ? null : evidence.length };
+  let stopLab = () => {};
   try {
-    const [{ response, deletionCode = null, resultId = null }] = stored
-      ? [{ response: { answers: stored.answers } }, await wait(believableDelay())]
-      : await Promise.all([askWithinLimit(evidence, judged, rawMode, stats), wait(MIN_LAB_MS)]);
-    stopLab();
+    const stored = await storedAnswers(selectedChat, judged);
+    // Our own samples hold nobody's chat, so they need no consent.
+    if (!stored && selectedSource !== 'sample' && !consented()) return;
+    errorBox.hidden = true;
+    // Counted over the whole chat, not just the part the model could read.
+    const stats = rawMode ? null : chatStats(evidence);
+    results.hidden = true;
+    if (!stored) stopLab = runLab();
+    const { response, deletionCode = null, resultId = null } = stored
+      ? { response: { answers: stored.answers } }
+      : await askWithinLimit(evidence, judged, stats, context);
     lastVerdict = {
       judged,
       ...readVerdicts(response.answers, judged),
@@ -416,9 +428,10 @@ async function judgeChat() {
     if (deletionCode) rememberKept({ code: deletionCode, at: new Date().toISOString(), people: judged.length });
     renderResults(lastVerdict);
   } catch (error) {
-    stopLab();
     showError(apiError(error));
   } finally {
+    stopLab();
+    judging = false;
     updateJudgeButton();
   }
 }
@@ -427,19 +440,17 @@ async function judgeChat() {
  * The token estimate is deliberately pessimistic, but an unusual chat can
  * still exceed the model's limit; then retry once with a much smaller slice.
  */
-async function askWithinLimit(evidence, judged, rawMode, stats) {
+async function askWithinLimit(evidence, judged, stats, context) {
   const ask = async (request, attempt) => {
-    const context = {
-      lang,
-      source,
-      totalMessages: rawMode ? null : messages.length,
+    const requestContext = {
+      ...context,
       truncated: request.truncated,
       attempt,
       // In judging order, without names, so a share link can show them again.
       stats: stats && judged.map((name) => stats.get(name) ?? null),
     };
     // The one consent box also agrees to keeping the chat without names.
-    const { payload, deletionCode, resultId } = await askJudge(request.body, { keep: true, context });
+    const { payload, deletionCode, resultId } = await askJudge(request.body, { keep: true, context: requestContext });
     return { request, response: payload, deletionCode, resultId };
   };
   try {
@@ -483,18 +494,28 @@ function renderResults({ judged, culprit, duo, people, stats, meta }, { scroll =
   renderKept(meta);
 
   $('own-chat-invite').hidden = !meta.shared;
-  $('share').onclick = () =>
-    openCard({
-      link: (names) => shareLink(meta, names),
-      duo: isDuo ? duo.choice : null,
-      suspects: verdict.choices,
-      strength: verdict.strength,
-      people: people.map(({ name, answers }, i) => {
-        const menace = menaceIndex(answers);
-        return { name, type: types[i].type, menace, severity: severityOf(menace) };
-      }),
-      records: records.map((r) => ({ key: r.key, name: r.name, detail: recordDetail(r) })),
-    });
+  $('share').onclick = async () => {
+    const button = $('share');
+    button.disabled = true;
+    try {
+      const { openCard } = await import('./card.js');
+      openCard({
+        link: (names) => shareLink(meta, names),
+        duo: isDuo ? duo.choice : null,
+        suspects: verdict.choices,
+        strength: verdict.strength,
+        people: people.map(({ name, answers }, i) => {
+          const menace = menaceIndex(answers);
+          return { name, type: types[i].type, menace, severity: severityOf(menace) };
+        }),
+        records: records.map((r) => ({ key: r.key, name: r.name, detail: recordDetail(r) })),
+      });
+    } catch (error) {
+      showError(error.message);
+    } finally {
+      button.disabled = false;
+    }
+  };
 
   results.hidden = false;
   updateClearButton();
@@ -677,7 +698,12 @@ renderSpeciesStrip();
 
 chat.addEventListener('input', () => {
   source = 'paste';
-  onChatChanged();
+  clearTimeout(chatChangeTimer);
+  if (chat.value.length < LARGE_CHAT_LENGTH) return onChatChanged();
+  // Coalesce edits to large exports; never judge names from the previous edit.
+  chatChangeTimer = setTimeout(onChatChanged, CHAT_EDIT_DELAY_MS);
+  updateJudgeButton();
+  updateClearButton();
 });
 
 const intake = $('intake');

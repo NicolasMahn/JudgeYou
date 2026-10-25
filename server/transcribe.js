@@ -41,8 +41,8 @@ export function invalidScreenshots(request) {
 }
 
 /** `post` sends a chat completion to OpenRouter; tests replace it. */
-export function createTranscriber({ key, model, post = (body) => postJson(UPSTREAM, key, body) }) {
-  return async function transcribe({ images, today }) {
+export function createTranscriber({ key, model, post = (body, { signal }) => postJson(UPSTREAM, key, body, signal) }) {
+  return async function transcribe({ images, today }, { signal } = {}) {
     const answer = await post({
       model,
       temperature: 0,
@@ -58,7 +58,7 @@ export function createTranscriber({ key, model, post = (body) => postJson(UPSTRE
           content: [{ type: 'text', text: PROMPT }, ...images.map((url) => ({ type: 'image_url', image_url: { url } }))],
         },
       ],
-    });
+    }, { signal });
     const choice = answer.choices?.[0];
     // A cut-off answer means the model got stuck repeating itself.
     if (!choice || choice.finish_reason === 'length') throw new TranscribeError(502, 'The screenshots could not be read.');
@@ -109,11 +109,12 @@ export function datedTranscript(text, today) {
     .join('\n');
 }
 
-async function postJson(url, key, body) {
+async function postJson(url, key, body, signal) {
   const response = await fetch(url, {
     method: 'POST',
     headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json', 'X-Title': 'JudgeYou' },
     body: JSON.stringify(body),
+    signal,
   });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) throw new TranscribeError(response.status === 429 ? 429 : 502, payload.error?.message ?? response.statusText);

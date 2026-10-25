@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>JudgeYou · Limits</title>
+    <link rel="stylesheet" href="/css/theme.css" />
+    <link rel="stylesheet" href="/css/admin.css" />
+    <script type="module" src="/js/admin.js"></script>
+  </head>
+  <body>
+    <main>
+      <a href="/">JudgeYou</a>
+      <form id="login">
+        <label>Admin token <input id="token" type="password" autocomplete="current-password" required /></label>
+        <button>Connect</button>
+      </form>
+      <p id="status" role="status"></p>
+      <form id="settings" hidden>
+        <p id="usage"></p>
+        <fieldset data-kind="decisions">
+          <legend>Judgments</legend>
+          <label>Requests per visitor per hour <input name="perIpPerHour" type="number" min="0" max="100000" required /></label>
+          <label>Requests per day <input name="perDay" type="number" min="0" max="1000000" required /></label>
+          <label>Simultaneous requests <input name="maxConcurrent" type="number" min="1" max="512" required /></label>
+        </fieldset>
+        <fieldset data-kind="screenshots">
+          <legend>Screenshot transcription</legend>
+          <label>Requests per visitor per hour <input name="perIpPerHour" type="number" min="0" max="100000" required /></label>
+          <label>Requests per day <input name="perDay" type="number" min="0" max="1000000" required /></label>
+          <label>Simultaneous requests <input name="maxConcurrent" type="number" min="1" max="64" required /></label>
+        </fieldset>
+        <label>Request timeout in seconds <input id="timeout" type="number" min="1" max="120" step="0.001" required /></label>
+        <p>Zero pauses new requests for that allowance. Limits apply to this server process. Counters reset on restart. Raising a limit allows more spending; provider capacity still applies.</p>
+        <button>Save limits</button>
+        <button id="refresh" type="button">Refresh usage</button>
+        <button id="disconnect" type="button">Disconnect</button>
+      </form>
+    </main>
+  </body>
+</html>

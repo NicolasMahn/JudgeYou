@@ -1,0 +1,13 @@
+body { margin: 0; background: var(--paper); color: var(--ink); font: 1rem/1.5 var(--font-body); }
+main { max-width: 42rem; margin: 2rem auto; padding: 0 1rem 3rem; }
+a { color: var(--ink); font-weight: 600; }
+form { margin-top: 1.5rem; }
+label { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin: 0.75rem 0; }
+input { width: 8rem; padding: 0.5rem; border: 1px solid var(--rule); background: var(--paper-raised); color: var(--ink); font: inherit; }
+input[type="password"] { flex: 1; min-width: 0; }
+fieldset { margin-bottom: 1.5rem; border: 1px solid var(--rule); }
+legend { padding: 0 0.4rem; font-weight: 600; }
+button { padding: 0.6rem 1rem; margin: 0.25rem 0.25rem 0.25rem 0; border: 1px solid var(--ink); background: var(--paper-raised); color: var(--ink); font: inherit; cursor: pointer; }
+button:disabled { opacity: 0.5; cursor: wait; }
+p { color: var(--ink-soft); }
+@media (max-width: 28rem) { label { align-items: start; flex-direction: column; gap: 0.25rem; } input { box-sizing: border-box; width: 100%; } }

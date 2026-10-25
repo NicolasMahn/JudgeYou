@@ -118,6 +118,17 @@ test('CSV exports with quoted fields', () => {
   assert.deepEqual(lines(chat), ['Mara: hi, all', 'Tobi: he said "no"\nreally']);
 });
 
+test('table headers and quoted multiline rows work with every supported delimiter', () => {
+  for (const delimiter of [',', ';', '\t']) {
+    const chat = [
+      ['"sender"', '"message"'].join(delimiter),
+      ['Mara', '"first line\nsecond line"'].join(delimiter),
+      ['Tobi', '"he said ""yes"""'].join(delimiter),
+    ].join('\n');
+    assert.deepEqual(lines(chat), ['Mara: first line\nsecond line', 'Tobi: he said "yes"']);
+  }
+});
+
 test('plain transcripts, without inventing speakers from sentences with colons', () => {
   const chat = [
     '**Ana**: are you coming?',

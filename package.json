@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "start": "node --disable-warning=ExperimentalWarning server/server.js",
-    "test": "node --test"
+    "test": "node --test",
+    "benchmark": "node --disable-warning=ExperimentalWarning scripts/benchmark.js"
   }
 }

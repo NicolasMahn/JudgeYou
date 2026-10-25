@@ -93,7 +93,10 @@ export function fromTable(raw) {
   const delimiter = ['\t', ';', ','].find((d) => header.includes(d));
   if (!delimiter) return null;
 
-  const [columns, ...rows] = readDelimited(raw, delimiter);
+  // Read just the header before deciding whether to scan the rest of a chat.
+  const rows = readDelimited(raw, delimiter);
+  const { value: columns } = rows.next();
+  if (!columns) return null;
   const names = columns.map((c) => c.trim().toLowerCase().replace(/^"|"$/g, ''));
   const authorAt = names.findIndex((c) => AUTHOR_COLUMN.test(c));
   const textAt = names.findIndex((c) => TEXT_COLUMN.test(c));
@@ -101,7 +104,7 @@ export function fromTable(raw) {
   // A table may split date and time into two columns.
   const timeAt = names.flatMap((c, i) => (TIME_COLUMN.test(c) ? [i] : []));
 
-  return rows.map((row) => ({
+  return Array.from(rows, (row) => ({
     author: row[authorAt] ?? '',
     text: row[textAt] ?? '',
     stamp: timeAt.map((i) => row[i] ?? '').join(' ') || null,
@@ -109,8 +112,7 @@ export function fromTable(raw) {
 }
 
 /** RFC 4180-style reader: quoted fields may contain delimiters, quotes and newlines. */
-function readDelimited(raw, delimiter) {
-  const rows = [];
+function* readDelimited(raw, delimiter) {
   let row = [];
   let field = '';
   let quoted = false;
@@ -132,13 +134,12 @@ function readDelimited(raw, delimiter) {
       row.push(field);
       field = '';
     } else if (c === '\n') {
-      rows.push([...row, field]);
+      yield [...row, field];
       row = [];
       field = '';
     } else {
       field += c;
     }
   }
-  if (field || row.length) rows.push([...row, field]);
-  return rows;
+  if (field || row.length) yield [...row, field];
 }

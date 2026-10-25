@@ -1,9 +1,11 @@
 import en from './locales/en.js';
-import de from './locales/de.js';
-import fr from './locales/fr.js';
-import es from './locales/es.js';
 
-const LOCALES = { en, de, fr, es };
+const LOCALES = { en };
+const LOADERS = {
+  de: () => import('./locales/de.js'),
+  fr: () => import('./locales/fr.js'),
+  es: () => import('./locales/es.js'),
+};
 export const LANGUAGES = { en: 'English', de: 'Deutsch', fr: 'Français', es: 'Español' };
 const STORAGE_KEY = 'judgeyou.language';
 
@@ -11,13 +13,26 @@ const STORAGE_KEY = 'judgeyou.language';
 // a third party and still guess wrong for travellers and multilingual countries.
 function preferredLanguage() {
   const chosen = localStorage.getItem(STORAGE_KEY);
-  if (chosen in LOCALES) return chosen;
-  return navigator.languages.map((tag) => tag.slice(0, 2).toLowerCase()).find((code) => code in LOCALES) ?? 'en';
+  if (Object.hasOwn(LANGUAGES, chosen)) return chosen;
+  return navigator.languages.map((tag) => tag.slice(0, 2).toLowerCase()).find((code) => Object.hasOwn(LANGUAGES, code)) ?? 'en';
 }
 
 export let lang = preferredLanguage();
 
-export function setLanguage(code) {
+async function loadLocale(code) {
+  if (!Object.hasOwn(LOCALES, code)) LOCALES[code] = (await LOADERS[code]()).default;
+}
+
+// Only the selected language joins English on the initial module graph.
+try {
+  await loadLocale(lang);
+} catch {
+  lang = 'en';
+}
+
+export async function setLanguage(code) {
+  if (!Object.hasOwn(LANGUAGES, code)) return;
+  await loadLocale(code);
   lang = code;
   localStorage.setItem(STORAGE_KEY, code);
 }

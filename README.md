@@ -55,6 +55,7 @@ language and switchable in the header.
 ```sh
 OPENROUTER_KEY=sk-or-… npm start   # serves http://localhost:8000
 npm test
+npm run benchmark -- --levels 1,10,32 --duration 2
 ```
 
 ## Server
@@ -67,6 +68,50 @@ origin, and `server/limits.js` caps requests per visitor per hour and in total
 per day (`LIMIT_PER_IP_PER_HOUR`, `LIMIT_PER_DAY`), separately for each. A script can fake the
 origin, so the caps are what bound the cost; give the key a credit limit on
 OpenRouter as well.
+
+Model work has separate concurrency limits: 32 judgments and 4 screenshot
+requests per process by default, including uploads. Excess requests receive
+503 with `Retry-After`, without consuming an allowance. A 30-second deadline
+cancels stalled uploads/model responses; leaving the page cancels model work.
+These are admission settings, not a guarantee of upstream model capacity or
+a limit on people simply opening the page. See [performance and capacity](docs/performance.md).
+
+Set a random `ADMIN_TOKEN` of at least 32 characters in the deployment `.env`
+to enable `/admin` (for example, generate one with `openssl rand -hex 32`).
+Keep the token private. The page stores it only in memory and its API requires
+it for every read and save. Changes apply immediately and persist in
+`data/settings.json` on the existing data volume. There is no restart needed.
+The dashboard shows active requests, today's usage and the allowance reset time.
+Zero in an allowance pauses that kind of model request. Lowering concurrency
+lets existing requests finish before admitting more.
+
+Without saved dashboard settings, these environment variables set defaults:
+
+| Variable | Default |
+| --- | ---: |
+| `LIMIT_PER_IP_PER_HOUR` | 20 |
+| `LIMIT_PER_DAY` | 1000 |
+| `SCREENSHOT_LIMIT_PER_IP_PER_HOUR` | Same as `LIMIT_PER_IP_PER_HOUR` |
+| `SCREENSHOT_LIMIT_PER_DAY` | Same as `LIMIT_PER_DAY` |
+| `MAX_CONCURRENT_DECISIONS` | 32 |
+| `MAX_CONCURRENT_SCREENSHOTS` | 4 |
+| `UPSTREAM_TIMEOUT_MS` | 30000 |
+
+Docker Compose passes the optional admin token; use `/admin` for persistent
+limit changes. Custom environment defaults must also be passed into the
+container if you use them. Invalid settings stop startup. Allowance counters
+are still in memory: restarts reset them and multiple replicas would have
+independent counters and settings. Keep one backend instance until shared
+admission/budget storage is added. Deleting a kept chat has a separate
+allowance and remains possible when judging is paused.
+
+Static text is compressed with Brotli or gzip and revalidated with ETags.
+The production container retains asset bytes in memory until it is replaced;
+development checks for file changes without restarting.
+Images and fonts are cached for a day; their names are not fingerprinted, so
+changes to an existing binary URL can take up to a day to appear. HTML,
+scripts, styles, manifest and service worker always revalidate. Languages,
+sample answers and share-card code load when needed.
 
 Every forwarded request becomes one row in an SQLite journal
 (`data/judgeyou.db`, see `server/store.js`): metadata and the model's answers, with

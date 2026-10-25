@@ -6,6 +6,8 @@ services:
       # .env next to this file, never committed: OPENROUTER_KEY=sk-or-…
       - OPENROUTER_KEY=${OPENROUTER_KEY:?set OPENROUTER_KEY in .env}
       - ALLOWED_ORIGINS=https://judge-you.de,https://www.judge-you.de
+      # Optional: enables /admin. Generate a long random token and keep it in .env.
+      - ADMIN_TOKEN=${ADMIN_TOKEN:-}
     # Node as PID 1 ignores SIGTERM; tini passes it on so stops are instant.
     init: true
     restart: unless-stopped

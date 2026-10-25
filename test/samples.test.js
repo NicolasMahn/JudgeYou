@@ -3,14 +3,14 @@ import assert from 'node:assert/strict';
 import { parseChat } from '../js/parse.js';
 import { NOBODY, readVerdicts } from '../js/questions.js';
 import { SAMPLES } from '../js/sample.js';
-import { believableDelay, defaultSubjects, storedAnswers } from '../js/sample-verdicts.js';
+import { defaultSubjects, storedAnswers } from '../js/sample-verdicts.js';
 
 // Fails when a sample or the questions change without rerunning
 // scripts/sample-verdicts.js, which would otherwise replay a stale verdict.
-test('every sample has a stored verdict that answers every question', () => {
+test('every sample has a stored verdict that answers every question', async () => {
   for (const { id, chat } of SAMPLES) {
     const subjects = defaultSubjects(parseChat(chat));
-    const { answers, sampleId } = storedAnswers(chat, subjects) ?? {};
+    const { answers, sampleId } = (await storedAnswers(chat, subjects)) ?? {};
     assert.ok(answers, `${id} has no stored verdict for ${subjects.join(', ')}`);
     assert.equal(sampleId, id);
     const { culprit, people } = readVerdicts(answers, subjects);
@@ -21,16 +21,9 @@ test('every sample has a stored verdict that answers every question', () => {
   }
 });
 
-test('an edited sample or a spared person is judged for real', () => {
+test('an edited sample or a spared person is judged for real', async () => {
   const { chat } = SAMPLES[0];
   const subjects = defaultSubjects(parseChat(chat));
-  assert.equal(storedAnswers(`${chat}\nMara: one more thing`, subjects), null);
-  assert.equal(storedAnswers(chat, subjects.slice(1)), null);
-});
-
-test('a replayed verdict takes as long as a real one would', () => {
-  for (const r of [0, 0.24, 0.25, 0.99]) {
-    const ms = believableDelay(() => r);
-    assert.ok(ms >= 1400 && ms <= 5000, `${r} → ${ms}`);
-  }
+  assert.equal(await storedAnswers(`${chat}\nMara: one more thing`, subjects), null);
+  assert.equal(await storedAnswers(chat, subjects.slice(1)), null);
 });

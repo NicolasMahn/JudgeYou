@@ -46,6 +46,7 @@ const FORMATS = [
 
 const STAMP_START = new RegExp(`^\\[?${STAMP}`);
 const STAMP_ANYWHERE = new RegExp(STAMP);
+const STAMP_MERIDIEM = new RegExp(MERIDIEM, 'g');
 const DATE_LINE = new RegExp(`^(?:[A-Za-z]+,?\\s)?${DATE}(?:,?\\s\\(?[A-Za-z]+\\)?)?$`);
 const MAX_WEAK_NAME_WORDS = 3;
 const MIN_STAMP_SHARE = 0.05;
@@ -132,7 +133,7 @@ function stampShapeFilter(lines, format) {
   const shapeOf = (line) =>
     STAMP_START.exec(line)?.[0]
       .replace(/\d+/g, '0')
-      .replace(new RegExp(MERIDIEM, 'g'), 'm');
+      .replace(STAMP_MERIDIEM, 'm');
   const counts = new Map();
   let total = 0;
   for (const line of lines) {

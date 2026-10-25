@@ -55,6 +55,16 @@ test('a page can’t choose a pricier model with our key', async (t) => {
   assert.equal(JSON.parse(forwarded[0]).model, JUDGE);
 });
 
+test('bounds judgment work and forwards only the supported request fields', async (t) => {
+  const { decide, forwarded } = await start(t);
+  assert.equal((await decide(JSON.stringify({ request: { ...REQUEST, extra: 'discard me' } }))).status, 200);
+  assert.deepEqual(JSON.parse(forwarded[0]), { ...REQUEST, model: JUDGE });
+  const questions = Object.fromEntries(Array.from({ length: 65 }, (_, i) => [`q${i}`, {}]));
+  assert.equal((await decide(JSON.stringify({ request: { ...REQUEST, questions } }))).status, 400);
+  assert.equal((await decide(JSON.stringify({ request: { ...REQUEST, state: { transcript: 'x'.repeat(65536) } } }))).status, 400);
+  assert.equal(forwarded.length, 1);
+});
+
 test('refuses other origins and malformed requests before spending anything', async (t) => {
   const { decide, forwarded } = await start(t);
   assert.equal((await decide(DECISION, 'https://example.com')).status, 403);

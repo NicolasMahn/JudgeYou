@@ -3,7 +3,6 @@
 // after the "#", which browsers never send, and are put back in the page.
 import { parseChat } from './parse.js';
 import { SAMPLES } from './sample.js';
-import { SAMPLE_ANSWERS } from './sample-answers.js';
 import { chatStats } from './stats.js';
 
 const SAMPLE_PREFIX = 'sample-';
@@ -30,6 +29,7 @@ export function sharedId(path = location.pathname) {
  */
 export async function loadShared(id, fragment = location.hash) {
   if (id.startsWith(SAMPLE_PREFIX)) {
+    const { SAMPLE_ANSWERS } = await import('./sample-answers.js');
     const sampleId = id.slice(SAMPLE_PREFIX.length);
     const sample = SAMPLES.find((candidate) => candidate.id === sampleId);
     const stored = SAMPLE_ANSWERS[sampleId];
