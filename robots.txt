@@ -1,0 +1,6 @@
+# Shared verdicts are private between friends; the API is not for crawlers.
+User-agent: *
+Disallow: /v/
+Disallow: /api/
+
+Sitemap: https://judge-you.de/sitemap.xml

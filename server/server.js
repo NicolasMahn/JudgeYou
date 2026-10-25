@@ -15,7 +15,7 @@ import { MAX_SCREENSHOTS, MAX_SCREENSHOT_BYTES, TranscribeError, createTranscrib
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 // The service worker and manifest must sit at the root to cover the whole site.
-const PUBLIC = ['index.html', 'privacy.html', 'impressum.html', 'manifest.webmanifest', 'sw.js', 'css/', 'js/', 'img/', 'fonts/'];
+const PUBLIC = ['index.html', 'privacy.html', 'impressum.html', 'manifest.webmanifest', 'sw.js', 'favicon.ico', 'robots.txt', 'sitemap.xml', 'css/', 'js/', 'img/', 'fonts/'];
 // A full request is ~64 KB (see STATE_TOKEN_BUDGET); this leaves headroom.
 const MAX_BODY_BYTES = 256 * 1024;
 // Base64 makes images a third bigger.
@@ -29,6 +29,10 @@ const TYPES = {
   '.png': 'image/png',
   '.woff2': 'font/woff2',
   '.webmanifest': 'application/manifest+json',
+  '.jpg': 'image/jpeg',
+  '.ico': 'image/x-icon',
+  '.txt': 'text/plain; charset=utf-8',
+  '.xml': 'application/xml; charset=utf-8',
 };
 
 export function createApp({
@@ -147,8 +151,12 @@ export function createApp({
     }
     if (req.method !== 'GET' && req.method !== 'HEAD') return fail(res, 405, 'Use GET.');
     if (path.startsWith('/api/results/')) return result(path.slice('/api/results/'.length), res);
-    // Share links open the page, which then loads the verdict itself.
-    if (path.startsWith('/v/')) return serveFile('/', res);
+    // Share links open the page, which then loads the verdict itself. They
+    // are between friends, so search engines must not list them.
+    if (path.startsWith('/v/')) {
+      res.setHeader('X-Robots-Tag', 'noindex');
+      return serveFile('/', res);
+    }
     return serveFile(path, res);
   });
 }

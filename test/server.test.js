@@ -120,6 +120,7 @@ test('serves the page but never key.js or files outside it', async (t) => {
   assert.equal((await fetch(`${base}/manifest.webmanifest`)).headers.get('content-type'), 'application/manifest+json');
   assert.equal((await fetch(`${base}/sw.js`)).status, 200);
   assert.equal((await fetch(`${base}/impressum.html`)).status, 200);
+  for (const path of ['/favicon.ico', '/robots.txt', '/sitemap.xml', '/img/og.jpg']) assert.equal((await fetch(`${base}${path}`)).status, 200, path);
 });
 
 test('a share that arrives before the service worker runs lands on the page', async (t) => {
@@ -137,7 +138,9 @@ test('a share link opens the page, and its verdict is readable without names', a
   };
   const { base, decide } = await start(t, { journal });
   assert.equal((await decide()).headers.get('x-result-id'), 'k7qm2xwd9h');
-  assert.match(await (await fetch(`${base}/v/k7qm2xwd9h`)).text(), /<html/);
+  const page = await fetch(`${base}/v/k7qm2xwd9h`);
+  assert.match(await page.text(), /<html/);
+  assert.equal(page.headers.get('x-robots-tag'), 'noindex', 'shared verdicts stay out of search engines');
   assert.deepEqual(await (await fetch(`${base}/api/results/k7qm2xwd9h`)).json(), verdict);
   assert.equal((await fetch(`${base}/api/results/aaaaaaaaaa`)).status, 404);
   assert.equal((await fetch(`${base}/api/results/..%2f..%2fetc`)).status, 404);

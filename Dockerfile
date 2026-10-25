@@ -1,7 +1,7 @@
 FROM node:22-alpine
 WORKDIR /app
 # No dependencies to install: the server only uses Node's standard library.
-COPY package.json index.html privacy.html impressum.html manifest.webmanifest sw.js ./
+COPY package.json index.html privacy.html impressum.html manifest.webmanifest sw.js favicon.ico robots.txt sitemap.xml ./
 COPY css css
 COPY js js
 COPY img img
