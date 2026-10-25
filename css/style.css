@@ -974,6 +974,40 @@ body.is-shared .results {
   margin-top: 1.5rem;
 }
 
+/* The masthead already draws the double rule above the verdict. */
+body.is-shared .suspect {
+  border-top: none;
+  padding-top: 1rem;
+}
+
+.shared-bar {
+  display: none;
+}
+
+body.is-shared .shared-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.shared-bar p {
+  margin: 0;
+  font: 800 1.35rem/1.15 var(--font-display);
+  letter-spacing: -0.01em;
+}
+
+.shared-bar em {
+  color: var(--accent);
+}
+
+.shared-bar .primary {
+  flex-basis: 100%;
+}
+
 .own-chat {
   display: grid;
   gap: 0.9rem;
@@ -1123,6 +1157,10 @@ body.is-shared .results {
   }
 
   /* Its own row under a rule, like the signature line at the foot of a form. */
+  .shared-bar .primary {
+    flex-basis: auto;
+  }
+
   .verdict {
     flex-direction: row;
     justify-content: space-between;

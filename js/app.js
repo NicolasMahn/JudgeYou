@@ -713,6 +713,7 @@ for (const [button, input] of [['open-file', 'file'], ['open-shots', 'shot-file'
 
 $('clear').addEventListener('click', clearAll);
 $('own-chat').addEventListener('click', clearAll);
+$('own-chat-top').addEventListener('click', clearAll);
 
 // Installing is what puts JudgeYou in the share menu of WhatsApp and others.
 window.addEventListener('beforeinstallprompt', (event) => {
