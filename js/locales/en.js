@@ -58,6 +58,7 @@ export default {
   cardCopy: 'Copy link',
   cardCopied: 'Link copied',
   ownChat: 'Judge your own chat',
+  ownChatLede: 'Paste a chat or add screenshots. It takes a minute.',
   unknownNumber: 'Unknown number {n}',
 
   lab: [

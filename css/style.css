@@ -961,6 +961,39 @@ button {
   color: var(--ink-soft);
 }
 
+/* A shared verdict opens on the verdict itself; the page to judge your own
+   chat comes back from the invitation at the bottom. */
+body.is-shared .hero,
+body.is-shared .species-strip,
+body.is-shared #intake,
+body.is-shared #lab {
+  display: none;
+}
+
+body.is-shared .results {
+  margin-top: 1.5rem;
+}
+
+.own-chat {
+  display: grid;
+  gap: 0.9rem;
+  justify-items: center;
+  margin-top: 3rem;
+  padding: 2rem 0 0.5rem;
+  border-top: 3px double var(--ink);
+  text-align: center;
+}
+
+.own-chat p {
+  margin: 0;
+  font: italic 400 1.15rem/1.4 var(--font-display);
+  color: var(--ink-soft);
+}
+
+.own-chat .primary {
+  width: min(100%, 22rem);
+}
+
 /* Sharing comes right after the verdict, where a phone shows it first. */
 .verdict-actions {
   display: grid;

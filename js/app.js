@@ -130,6 +130,7 @@ function resetVerdict() {
 /** Back to an empty page: no chat, no waiting screenshots, no verdict. */
 function clearAll() {
   resetVerdict();
+  document.body.classList.remove('is-shared');
   // A shared verdict's address would bring it back on reload.
   if (sharedId()) history.replaceState(null, '', '/');
   screenshots.forEach(({ url }) => URL.revokeObjectURL(url));
@@ -280,8 +281,11 @@ function localDate() {
 async function showSharedVerdict() {
   const id = sharedId();
   if (!id) return;
+  // Someone sent a verdict: show it first, not an empty box to fill.
+  document.body.classList.add('is-shared');
   const shared = await loadShared(id).catch(() => null);
   if (!shared) {
+    document.body.classList.remove('is-shared');
     history.replaceState(null, '', '/');
     showError(t('errors.sharedMissing'));
     return;
@@ -297,7 +301,7 @@ async function showSharedVerdict() {
     stats: shared.stats,
     meta: { resultId: shared.sampleId ? null : id, sampleId: shared.sampleId ?? null, shared: true },
   };
-  renderResults(lastVerdict);
+  renderResults(lastVerdict, { scroll: false });
 }
 
 /** Files shared to the installed app, parked by sw.js until the page loads. */
@@ -478,7 +482,7 @@ function renderResults({ judged, culprit, duo, people, stats, meta }, { scroll =
 
   renderKept(meta);
 
-  $('own-chat').hidden = !meta.shared;
+  $('own-chat-invite').hidden = !meta.shared;
   $('share').onclick = () =>
     openCard({
       link: (names) => shareLink(meta, names),
