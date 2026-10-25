@@ -1,7 +1,7 @@
 {
   "name": "JudgeYou",
   "short_name": "JudgeYou",
-  "description": "A field guide to the people in your group chat",
+  "description": "A field guide to the people in your chats",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

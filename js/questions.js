@@ -20,6 +20,10 @@ function estimateTokens(value) {
 // almost no extra time; the cap keeps the results page readable.
 export const MAX_SUBJECTS = 8;
 
+// A chat of one or two messages gives the model nothing to go on. Quiet
+// people in a longer chat are judged anyway: saying little is a verdict too.
+export const MIN_MESSAGES_TO_JUDGE = 3;
+
 // Option keys match TYPES in presentation.js; the descriptions are what Jev
 // actually judges against. Each names a defining excess rather than a common
 // behaviour: everyday chats are mostly logistics, and with softer wording
@@ -83,6 +87,21 @@ const PERSONAL_QUESTIONS = {
 };
 
 const CULPRIT = 'culprit';
+const DUO = 'duo';
+
+// Two people get a verdict on the pair instead of a culprit, who between two
+// is mostly whoever wrote more. Keys match DUO_KEYS in presentation.js; like
+// TYPE_CRITERIA, each names what sets the pair apart, not what all chats do.
+const DUO_CRITERIA = {
+  old_married_couple: 'Bicker affectionately about small things, finish each other’s plans, comfortable routine',
+  partners_in_crime: 'Egg each other on: shared jokes, schemes and mischief, the same sense of humour',
+  fan_and_celebrity: 'Lopsided: one writes eagerly and at length, the other answers rarely, briefly or coolly',
+  cat_and_mouse: 'Teasing and chasing; flirty or competitive banter, nobody says anything straight',
+  ships_in_the_night: 'Few messages and long gaps, yet friendly whenever they do write',
+  planning_committee: 'Almost only logistics: times, places, lists and confirmations',
+  therapist_and_client: 'One mostly vents or asks for advice, the other listens, reassures and helps',
+  frenemies: 'Friendly on the surface with sharp digs, competition or sarcasm underneath',
+};
 
 /** The newest messages whose state fits the token budget, oldest first. */
 function newestWithinBudget(messages, budget) {
@@ -124,6 +143,16 @@ export function buildRequest(chat, subjects, budget = STATE_TOKEN_BUDGET) {
     },
   };
 
+  // The culprit is still asked of a duo, so every verdict has the same shape
+  // for the journal and share links; the page just doesn't show it.
+  if (subjects.length === 2) {
+    questions[DUO] = {
+      type: 'choice',
+      instructions: `Which description best captures the dynamic between ${subjects[0]} and ${subjects[1]} in this chat?`,
+      criteria: DUO_CRITERIA,
+    };
+  }
+
   subjects.forEach((name, i) => {
     for (const [key, question] of Object.entries(PERSONAL_QUESTIONS)) {
       questions[`p${i}_${key}`] = question(name);
@@ -150,6 +179,7 @@ export function buildRequest(chat, subjects, budget = STATE_TOKEN_BUDGET) {
 export function readVerdicts(answers, subjects) {
   return {
     culprit: answers[CULPRIT],
+    duo: answers[DUO] ?? null,
     people: subjects.map((name, i) => ({
       name,
       answers: Object.fromEntries(

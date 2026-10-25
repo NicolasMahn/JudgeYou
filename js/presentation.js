@@ -20,6 +20,20 @@ export const SPECIES = {
 
 export const TYPE_KEYS = Object.keys(SPECIES);
 
+/** Keys match DUO_CRITERIA in questions.js. */
+export const DUO_KEYS = [
+  'old_married_couple',
+  'partners_in_crime',
+  'fan_and_celebrity',
+  'cat_and_mouse',
+  'ships_in_the_night',
+  'planning_committee',
+  'therapist_and_client',
+  'frenemies',
+];
+export const duoName = (duo) => t(`duos.${duo}.name`);
+export const duoNote = (duo) => t(`duos.${duo}.note`);
+
 export const typeName = (type) => t(`types.${type}.name`);
 export const typeNote = (type) => t(`types.${type}.note`);
 

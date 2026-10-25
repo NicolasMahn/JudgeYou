@@ -2,12 +2,17 @@
 // and picks the models, so nothing here names one.
 
 /**
- * Resolves to the verdict and, when the chat was kept, its deletion code.
- * `keep` and `context` are for our journal and never reach the model.
+ * Resolves to the verdict, its share link's ID and, when the chat was kept,
+ * its deletion code. `keep` and `context` are for our journal and never
+ * reach the model.
  */
 export async function askJudge(request, { keep, context }) {
   const response = await post('/api/decisions', { request, keep, context });
-  return { payload: await response.json(), deletionCode: response.headers.get('X-Deletion-Code') };
+  return {
+    payload: await response.json(),
+    deletionCode: response.headers.get('X-Deletion-Code'),
+    resultId: response.headers.get('X-Result-Id'),
+  };
 }
 
 /** Deletes a kept chat; resolves to whether there was one for this code. */

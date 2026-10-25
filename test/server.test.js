@@ -128,3 +128,17 @@ test('a share that arrives before the service worker runs lands on the page', as
   assert.equal(response.status, 303);
   assert.equal(response.headers.get('location'), '/');
 });
+
+test('a share link opens the page, and its verdict is readable without names', async (t) => {
+  const verdict = { people: 2, answers: { culprit: { choice: 'Person 2' } }, stats: null };
+  const journal = {
+    write: () => ({ deletionCode: null, resultId: 'k7qm2xwd9h' }),
+    result: (id) => (id === 'k7qm2xwd9h' ? verdict : null),
+  };
+  const { base, decide } = await start(t, { journal });
+  assert.equal((await decide()).headers.get('x-result-id'), 'k7qm2xwd9h');
+  assert.match(await (await fetch(`${base}/v/k7qm2xwd9h`)).text(), /<html/);
+  assert.deepEqual(await (await fetch(`${base}/api/results/k7qm2xwd9h`)).json(), verdict);
+  assert.equal((await fetch(`${base}/api/results/aaaaaaaaaa`)).status, 404);
+  assert.equal((await fetch(`${base}/api/results/..%2f..%2fetc`)).status, 404);
+});

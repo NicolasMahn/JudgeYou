@@ -1,5 +1,5 @@
 import { parseChat, participantsOf } from './parse.js';
-import { buildRequest, readVerdicts, MAX_SUBJECTS, STATE_TOKEN_BUDGET } from './questions.js';
+import { buildRequest, readVerdicts, MAX_SUBJECTS, MIN_MESSAGES_TO_JUDGE, STATE_TOKEN_BUDGET } from './questions.js';
 import { askJudge, forgetChat, readScreenshots } from './api.js';
 import { forgetKept, rememberKept } from './kept.js';
 import { assignTypes, menaceIndex, normalisedScore, severityOf } from './verdict.js';
@@ -21,9 +21,12 @@ import {
   severityLabel,
   typeName,
   typeNote,
+  duoName,
+  duoNote,
 } from './presentation.js';
 import { SAMPLES } from './sample.js';
 import { believableDelay, storedAnswers } from './sample-verdicts.js';
+import { loadShared, shareLink, sharedId } from './share.js';
 
 const LAB_LINE_MS = 340;
 const LAB_FLICKER_MS = 110;
@@ -126,6 +129,8 @@ function resetVerdict() {
 /** Back to an empty page: no chat, no waiting screenshots, no verdict. */
 function clearAll() {
   resetVerdict();
+  // A shared verdict's address would bring it back on reload.
+  if (sharedId()) history.replaceState(null, '', '/');
   screenshots.forEach(({ url }) => URL.revokeObjectURL(url));
   screenshots = [];
   chat.value = '';
@@ -286,6 +291,30 @@ function localDate() {
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 }
 
+/** A verdict opened from a share link: /v/<id>#names. */
+async function showSharedVerdict() {
+  const id = sharedId();
+  if (!id) return;
+  const shared = await loadShared(id).catch(() => null);
+  if (!shared) {
+    history.replaceState(null, '', '/');
+    showError(t('errors.sharedMissing'));
+    return;
+  }
+  if (shared.chat) {
+    chat.value = shared.chat;
+    source = 'sample';
+    onChatChanged();
+  }
+  lastVerdict = {
+    judged: shared.subjects,
+    ...readVerdicts(shared.answers, shared.subjects),
+    stats: shared.stats,
+    meta: { resultId: shared.sampleId ? null : id, sampleId: shared.sampleId ?? null, shared: true },
+  };
+  renderResults(lastVerdict);
+}
+
 /** Files shared to the installed app, parked by sw.js until the page loads. */
 async function takeSharedFiles() {
   if (!new URLSearchParams(location.search).has('shared') || !('caches' in window)) return;
@@ -325,7 +354,7 @@ function renderSubjects() {
 }
 
 function updateJudgeButton() {
-  judgeButton.disabled = subjects().length < 2;
+  judgeButton.disabled = subjects().length < 2 || (!isRawMode() && messages.length < MIN_MESSAGES_TO_JUDGE);
 }
 
 function showError(message) {
@@ -375,22 +404,23 @@ async function judgeChat() {
   errorBox.hidden = true;
   const rawMode = isRawMode();
   const evidence = rawMode ? chat.value : messages;
+  // Counted over the whole chat, not just the part the model could read.
+  const stats = rawMode ? null : chatStats(messages);
   results.hidden = true;
   judgeButton.disabled = true;
   const stopLab = runLab();
 
   try {
-    const [{ response, deletionCode }] = stored
-      ? [{ response: { answers: stored }, deletionCode: null }, await wait(believableDelay())]
-      : await Promise.all([askWithinLimit(evidence, judged, rawMode), wait(MIN_LAB_MS)]);
+    const [{ response, deletionCode = null, resultId = null }] = stored
+      ? [{ response: { answers: stored.answers } }, await wait(believableDelay())]
+      : await Promise.all([askWithinLimit(evidence, judged, rawMode, stats), wait(MIN_LAB_MS)]);
     stopLab();
     lastVerdict = {
       judged,
       ...readVerdicts(response.answers, judged),
-      // Counted over the whole chat, not just the part the model could read.
-      stats: rawMode ? null : chatStats(messages),
+      stats,
       // Counts, timing and cost are journaled on the server, not shown.
-      meta: { deletionCode },
+      meta: { deletionCode, resultId, sampleId: stored?.sampleId ?? null },
     };
     if (deletionCode) rememberKept({ code: deletionCode, at: new Date().toISOString(), people: judged.length });
     renderResults(lastVerdict);
@@ -406,7 +436,7 @@ async function judgeChat() {
  * The token estimate is deliberately pessimistic, but an unusual chat can
  * still exceed the model's limit; then retry once with a much smaller slice.
  */
-async function askWithinLimit(evidence, judged, rawMode) {
+async function askWithinLimit(evidence, judged, rawMode, stats) {
   const ask = async (request, attempt) => {
     const context = {
       lang,
@@ -414,10 +444,12 @@ async function askWithinLimit(evidence, judged, rawMode) {
       totalMessages: rawMode ? null : messages.length,
       truncated: request.truncated,
       attempt,
+      // In judging order, without names, so a share link can show them again.
+      stats: stats && judged.map((name) => stats.get(name) ?? null),
     };
     // The one consent box also agrees to keeping the chat without names.
-    const { payload, deletionCode } = await askJudge(request.body, { keep: true, context });
-    return { request, response: payload, deletionCode };
+    const { payload, deletionCode, resultId } = await askJudge(request.body, { keep: true, context });
+    return { request, response: payload, deletionCode, resultId };
   };
   try {
     return await ask(buildRequest(evidence, judged), 1);
@@ -443,17 +475,11 @@ function barRow(label, probability) {
   return row;
 }
 
-function renderResults({ judged, culprit, people, stats, meta }, { scroll = true } = {}) {
+function renderResults({ judged, culprit, duo, people, stats, meta }, { scroll = true } = {}) {
   const types = assignTypes(people.map((p) => p.answers.type));
-  const suspectType = types[people.findIndex((p) => p.name === culprit.choice)].type;
-  $('suspect-mascot').src = mascotOf(suspectType);
-  $('suspect-name').textContent = culprit.choice;
-  $('suspect-stat').textContent = t('suspectStat', {
-    type: typeName(suspectType),
-    p: culprit.probabilities[culprit.choice].toFixed(2),
-    confidence: culprit.confidence.toFixed(2),
-  });
-  $('suspect-bars').replaceChildren(...judged.map((name) => barRow(name, culprit.probabilities[name] ?? 0)));
+  const isDuo = judged.length === 2 && Boolean(duo?.choice);
+  if (isDuo) renderDuo(duo, judged, types, stats);
+  else renderSuspect(culprit, judged, types, people);
 
   const records = stats ? recordsOf(stats, judged) : [];
   $('records').replaceChildren(...records.map(record));
@@ -463,8 +489,11 @@ function renderResults({ judged, culprit, people, stats, meta }, { scroll = true
 
   renderKept(meta);
 
+  $('own-chat').hidden = !meta.shared;
   $('share').onclick = () =>
     openCard({
+      link: (names) => shareLink(meta, names),
+      duo: isDuo ? duo.choice : null,
       suspect: culprit.choice,
       people: people.map(({ name, answers }, i) => {
         const menace = menaceIndex(answers);
@@ -477,6 +506,46 @@ function renderResults({ judged, culprit, people, stats, meta }, { scroll = true
   updateClearButton();
   if (scroll) results.scrollIntoView({ behavior: 'smooth', block: 'start' });
   animateIn();
+}
+
+function renderSuspect(culprit, judged, types, people) {
+  const suspectType = types[people.findIndex((p) => p.name === culprit.choice)].type;
+  $('suspect').classList.remove('is-duo');
+  $('duo-mascot').hidden = true;
+  $('suspect-note').hidden = true;
+  $('suspect-kicker').textContent = t('suspect');
+  $('suspect-stamp').textContent = t('guilty');
+  $('suspect-mascot').src = mascotOf(suspectType);
+  $('suspect-name').textContent = culprit.choice;
+  $('suspect-stat').textContent = t('suspectStat', {
+    type: typeName(suspectType),
+    p: culprit.probabilities[culprit.choice].toFixed(2),
+    confidence: culprit.confidence.toFixed(2),
+  });
+  $('suspect-bars').replaceChildren(...judged.map((name) => barRow(name, culprit.probabilities[name] ?? 0)));
+}
+
+/** Two people: a verdict on the pair, and who carries the chat, counted. */
+function renderDuo(duo, judged, types, stats) {
+  $('suspect').classList.add('is-duo');
+  $('duo-mascot').hidden = false;
+  $('suspect-mascot').src = mascotOf(types[0].type);
+  $('duo-mascot').src = mascotOf(types[1].type);
+  $('suspect-kicker').textContent = t('duo');
+  $('suspect-stamp').textContent = t('duoStamp');
+  $('suspect-name').textContent = `${judged[0]} & ${judged[1]}`;
+  $('suspect-stat').textContent = `${duoName(duo.choice)} · p = ${(duo.probabilities?.[duo.choice] ?? 0).toFixed(2)}`;
+  $('suspect-note').textContent = duoNote(duo.choice);
+  $('suspect-note').hidden = false;
+
+  const counts = judged.map((name) => stats?.get(name)?.messages ?? 0);
+  const total = counts[0] + counts[1];
+  $('suspect-bars').replaceChildren(
+    ...(total
+      ? [Object.assign(document.createElement('p'), { className: 'bars-label', textContent: t('duoShare') }),
+         ...judged.map((name, i) => barRow(name, counts[i] / total))]
+      : []),
+  );
 }
 
 function record(entry) {
@@ -622,6 +691,7 @@ for (const [button, input] of [['open-file', 'file'], ['open-shots', 'shot-file'
 readButton.addEventListener('click', () => readTray({ add: true }));
 readNewButton.addEventListener('click', () => readTray({ add: false }));
 $('clear').addEventListener('click', clearAll);
+$('own-chat').addEventListener('click', clearAll);
 
 // Installing is what puts JudgeYou in the share menu of WhatsApp and others.
 window.addEventListener('beforeinstallprompt', (event) => {
@@ -638,6 +708,7 @@ window.addEventListener('appinstalled', () => ($('install').hidden = true));
 
 navigator.serviceWorker?.register('/sw.js');
 takeSharedFiles();
+showSharedVerdict();
 
 // Each click brings the next sample; after the first, the button says so.
 let nextSample = 0;

@@ -1,6 +1,7 @@
 # JudgeYou
 
-A one-page field guide that judges the people in a group chat, pseudo-scientifically.
+A one-page field guide that judges the people in a chat, pseudo-scientifically:
+each person gets one of twelve types, and a chat of two gets one of eight duos.
 A decision model answers narrow questions about each person with probabilities
 instead of prose, through OpenRouter's Decisions endpoint. Each person is
 classified as one of twelve types, each with an engraved mascot. Everything runs
@@ -37,9 +38,14 @@ hours of silence the next message starts a new conversation instead. Medians
 need at least 3 observations, and a record ("Slowest thumbs") needs a clear
 winner.
 
-The results can be shared as an image. It shows names, types and counts, never
-chat text; names default to first names, phone numbers are hidden, and all of
-them can be edited first.
+The results can be shared as an image with a link back to the verdict,
+`judge-you.de/v/<id>#Ana,Ben`. The server stores each verdict and its counted
+numbers with names replaced by "Person 1, 2…" (`GET /api/results/<id>`); the
+names travel only in the link's fragment, which browsers never send, and the
+page puts them back (`js/share.js`). Sample verdicts link as
+`/v/sample-<id>`. The image shows names, types and counts, never chat text;
+names default to first names, phone numbers are hidden, and all of them can be
+edited first.
 
 The page speaks English, German, French and Spanish, picked from the browser's
 language and switchable in the header.

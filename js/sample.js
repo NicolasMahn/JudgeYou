@@ -26,6 +26,29 @@ export const SAMPLES = [
 [2026-09-18, 21:34:30] Jonas: can someone tell me what's happening`,
   },
   {
+    // Two people, so it gets the duo verdict. WhatsApp on Android, German.
+    id: 'ikea',
+    chat: `24.10.26, 10:02 - Lena: IKEA heute? Ich brauch nur Teelichter
+24.10.26, 10:03 - Tim: das hast du letztes mal auch gesagt und wir kamen mit einem sofa raus
+24.10.26, 10:03 - Lena: Das Sofa war ein Notfall
+24.10.26, 10:04 - Tim: es war 23 uhr an einem dienstag
+24.10.26, 10:05 - Lena: Holst du mich um 2 ab? Und nimm die blauen Taschen mit, nicht die gelben
+24.10.26, 10:05 - Tim: die gelben SIND die blauen lena
+24.10.26, 10:06 - Lena: Die anderen gelben
+24.10.26, 10:07 - Tim: ok. 14 uhr. ich ess vorher, sonst wird's wieder wie im märz
+24.10.26, 10:08 - Lena: Wir reden nicht über März
+24.10.26, 13:58 - Tim: bin unten
+24.10.26, 14:20 - Lena: 2 Min!!
+24.10.26, 14:31 - Tim: das waren 11
+24.10.26, 16:45 - Lena: Wo bist du? Ich bin bei den Pflanzen
+24.10.26, 16:46 - Tim: bei den köttbullar. wie immer. wie jedes mal. seit 2019
+24.10.26, 16:46 - Lena: Bring mir welche mit 🥺
+24.10.26, 16:47 - Tim: hab schon 2 portionen. eine ist für dich, ich kenn dich
+24.10.26, 18:10 - Lena: Danke fürs Fahren ❤️ Teelichter hab ich übrigens vergessen
+24.10.26, 18:11 - Tim: natürlich hast du das. nächsten samstag?
+24.10.26, 18:11 - Lena: Nächsten Samstag 🫶`,
+  },
+  {
     // WhatsApp on Android, day first.
     id: 'flatmates',
     chat: `14/10/2026, 21:02 - Sam: Hi all 🙂 just a gentle reminder that the sink is not a storage area
@@ -92,7 +115,8 @@ export const SAMPLES = [
 25.10.26, 12:59 - Mama: Lea!! Den Salat sollten DIE ANDEREN bringen 😅 Ich hab doch extra gefragt
 25.10.26, 13:05 - Finn: kann jemand oma sagen dass sie mich gleich nach dem essen interviewen soll? für folge 4. ich hab schon fragen vorbereitet, eigentlich geht's eher um mich
 25.10.26, 13:20 - Papa: Bin unterwegs. Ohne Jacke. Es regnet nicht
-25.10.26, 13:34 - Papa: Es regnet`,
+25.10.26, 13:34 - Papa: Es regnet
+25.10.26, 13:36 - Lea: wir haben dir salat übrig gelassen papa. also den teller`,
   },
   {
     // WhatsApp in the US: month first, 12-hour clock.

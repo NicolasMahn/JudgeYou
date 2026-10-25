@@ -3,8 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>JudgeYou · A field guide to the people in your group chat</title>
-    <meta name="description" content="Paste a group chat or its screenshots. Everyone in it is classified into one of twelve species." />
+    <!-- Share links open this page at /v/<id>; relative paths must still mean the site root. -->
+    <base href="/" />
+    <title>JudgeYou · A field guide to the people in your chats</title>
+    <meta name="description" content="Paste a chat or its screenshots. Everyone in it is classified into one of twelve species, and pairs into one of eight duos." />
     <link rel="icon" href="img/types/drama_llama.webp" />
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="apple-touch-icon" href="img/icon-192.png" />
@@ -16,14 +18,14 @@
   <body>
     <header class="masthead">
       <strong>JudgeYou</strong>
-      <span data-i18n="tagline">A field guide to the people in your group chat</span>
+      <span data-i18n="tagline">A field guide to the people in your chats</span>
       <span data-i18n="volume">Vol. I · 2026</span>
       <select id="language" data-i18n-attr="aria-label: language"></select>
     </header>
 
     <main>
       <section class="hero">
-        <h1 data-i18n-html="hero">Who is the <em>problem</em> in your group chat?</h1>
+        <h1 data-i18n-html="hero">Who is the <em>problem</em> in your chat?</h1>
         <p class="lede" data-i18n="lede"></p>
       </section>
 
@@ -98,21 +100,24 @@
       </section>
 
       <section id="results" class="results" aria-live="polite" hidden>
-        <article class="suspect">
-          <img id="suspect-mascot" alt="" width="192" height="192" />
+        <!-- The prime suspect, or for two people the duo: both mascots, one verdict. -->
+        <article id="suspect" class="suspect">
+          <div class="suspect-figure">
+            <img id="suspect-mascot" alt="" width="192" height="192" />
+            <img id="duo-mascot" alt="" width="192" height="192" hidden />
+          </div>
           <div>
-            <p class="kicker" data-i18n="suspect"></p>
+            <p id="suspect-kicker" class="kicker"></p>
             <p id="suspect-name" class="suspect-name"></p>
             <p id="suspect-stat" class="suspect-stat"></p>
+            <p id="suspect-note" class="suspect-note" hidden></p>
           </div>
           <div id="suspect-bars" class="bars"></div>
-          <div class="stamp" data-i18n="guilty"></div>
+          <div id="suspect-stamp" class="stamp"></div>
         </article>
         <div class="verdict-actions">
           <button id="share" class="primary" type="button" data-i18n="share"></button>
-          <p id="kept" class="kept" hidden>
-            <span id="kept-text"></span> <button id="forget" class="link" type="button" data-i18n="forget"></button>
-          </p>
+          <button id="own-chat" class="secondary" type="button" hidden data-i18n="ownChat"></button>
         </div>
         <div id="records" class="records"></div>
         <div id="plates" class="plates"></div>
@@ -125,6 +130,10 @@
         <a href="impressum.html" data-i18n="imprint"></a>
         <a href="privacy.html" data-i18n="privacy"></a>
       </nav>
+      <!-- With the legal links: there when needed, not advertised. -->
+      <p id="kept" class="kept" hidden>
+        <span id="kept-text"></span> <button id="forget" class="link" type="button" data-i18n="forget"></button>
+      </p>
     </footer>
 
     <dialog id="card-dialog" class="card-dialog">
@@ -135,7 +144,8 @@
           <div id="card-names" class="card-names"></div>
         </fieldset>
         <button id="card-share" class="primary" type="button" data-i18n="cardShare"></button>
-        <button id="card-download" class="primary" type="button" data-i18n="cardDownload"></button>
+        <button id="card-copy" class="secondary" type="button" data-i18n="cardCopy"></button>
+        <button id="card-download" class="secondary" type="button" data-i18n="cardDownload"></button>
         <button class="link" value="close" data-i18n="cardClose"></button>
       </form>
     </dialog>

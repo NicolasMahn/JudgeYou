@@ -50,3 +50,13 @@ test('unrecognised formats are sent as raw text with the named participants', ()
   assert.ok(body.state.transcript.endsWith('the end'));
   assert.ok(stateTokens(body) <= STATE_TOKEN_BUDGET);
 });
+
+test('two people are judged as a duo, more as a group with a culprit', () => {
+  const chat = [{ author: 'Ana', text: 'hi' }, { author: 'Ben', text: 'k' }, { author: 'Cy', text: 'lol' }];
+  const duo = buildRequest(chat, ['Ana', 'Ben']).body.questions;
+  const group = buildRequest(chat, ['Ana', 'Ben', 'Cy']).body.questions;
+  assert.equal(duo.duo.type, 'choice');
+  assert.ok(duo.culprit, 'still asked, so every verdict has the same shape');
+  assert.equal(group.duo, undefined);
+  assert.equal(readVerdicts({ duo: { choice: 'frenemies' } }, ['Ana', 'Ben']).duo.choice, 'frenemies');
+});

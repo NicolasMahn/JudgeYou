@@ -10,8 +10,9 @@ import { believableDelay, defaultSubjects, storedAnswers } from '../js/sample-ve
 test('every sample has a stored verdict that answers every question', () => {
   for (const { id, chat } of SAMPLES) {
     const subjects = defaultSubjects(parseChat(chat));
-    const answers = storedAnswers(chat, subjects);
+    const { answers, sampleId } = storedAnswers(chat, subjects) ?? {};
     assert.ok(answers, `${id} has no stored verdict for ${subjects.join(', ')}`);
+    assert.equal(sampleId, id);
     const { culprit, people } = readVerdicts(answers, subjects);
     assert.ok(subjects.includes(culprit.choice), id);
     for (const person of people) {

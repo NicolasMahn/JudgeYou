@@ -73,7 +73,7 @@ export function createApp({
       return fail(res, 502, 'OpenRouter could not be reached.');
     }
 
-    const code = journal?.write({
+    const written = journal?.write({
       ip: clientIp(req),
       request,
       context,
@@ -83,7 +83,8 @@ export function createApp({
       payload: parseOrNull(text),
     });
     const headers = { 'Content-Type': 'application/json' };
-    if (code) headers['X-Deletion-Code'] = code;
+    if (written?.deletionCode) headers['X-Deletion-Code'] = written.deletionCode;
+    if (written?.resultId) headers['X-Result-Id'] = written.resultId;
     res.writeHead(status, headers);
     res.end(text);
   }
@@ -115,6 +116,16 @@ export function createApp({
     }
   }
 
+  // Anyone with a share link may read its verdict: names were replaced
+  // before it was stored, and the link carries them only after the "#",
+  // which browsers never send.
+  function result(id, res) {
+    const found = /^[a-z2-9]{10}$/.test(id) ? journal?.result(id) : null;
+    if (!found) return fail(res, 404, 'No verdict with that link.');
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=86400' });
+    res.end(JSON.stringify(found));
+  }
+
   function withinLimit(limiter, req, res) {
     const refusal = limiter.take(clientIp(req));
     if (!refusal) return true;
@@ -135,6 +146,9 @@ export function createApp({
       return res.end();
     }
     if (req.method !== 'GET' && req.method !== 'HEAD') return fail(res, 405, 'Use GET.');
+    if (path.startsWith('/api/results/')) return result(path.slice('/api/results/'.length), res);
+    // Share links open the page, which then loads the verdict itself.
+    if (path.startsWith('/v/')) return serveFile('/', res);
     return serveFile(path, res);
   });
 }

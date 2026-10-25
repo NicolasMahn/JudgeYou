@@ -9,12 +9,15 @@ import { SAMPLE_ANSWERS } from './sample-answers.js';
 /** Who the page judges when nobody is spared. */
 export const defaultSubjects = (messages) => participantsOf(messages).map((p) => p.name).slice(0, MAX_SUBJECTS);
 
-/** The stored answers when `chat` and `subjects` are exactly a sample's, otherwise null. */
+/**
+ * The stored answers and the sample's ID when `chat` and `subjects` are
+ * exactly a sample's, otherwise null.
+ */
 export function storedAnswers(chat, subjects) {
   const sample = SAMPLES.find((candidate) => candidate.chat === chat);
   const stored = sample && SAMPLE_ANSWERS[sample.id];
   if (!stored || stored.subjects.join('\n') !== subjects.join('\n')) return null;
-  return stored.answers;
+  return { sampleId: sample.id, answers: stored.answers };
 }
 
 /**

@@ -587,6 +587,33 @@ button {
   height: auto;
 }
 
+/* Two specimens, shoulder to shoulder. */
+.suspect-figure {
+  display: flex;
+}
+
+.suspect.is-duo img {
+  width: clamp(5.5rem, 12vw, 9rem);
+}
+
+.suspect.is-duo img + img {
+  margin-left: -1.25rem;
+}
+
+.suspect-note {
+  margin: 0.5rem 0 0;
+  font: italic 400 1rem/1.4 var(--font-display);
+  color: var(--ink-soft);
+}
+
+.bars-label {
+  margin: 0;
+  font: 500 0.72rem var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
 .kicker {
   margin: 0;
   font: 500 0.75rem var(--font-mono);
@@ -925,9 +952,16 @@ button {
 }
 
 .kept {
+  flex-basis: 100%;
   margin: 0;
-  font: 0.75rem var(--font-mono);
-  color: var(--ink-muted);
+  font: inherit;
+  color: inherit;
+}
+
+.kept .link {
+  color: inherit;
+  font: inherit;
+  text-decoration-color: currentColor;
 }
 
 .kept-list {

@@ -2,7 +2,7 @@
 // downloaded or handed to the phone's share sheet. It shows names, types and
 // counts, never chat text, and names can be changed before anything leaves.
 import { t } from './i18n.js';
-import { mascotOf, severityLabel, typeName } from './presentation.js';
+import { duoName, duoNote, mascotOf, severityLabel, typeName } from './presentation.js';
 
 const WIDTH = 1080;
 const HEIGHT = 1350;
@@ -22,7 +22,9 @@ function defaultNames(names) {
 
 /**
  * `verdict` holds `suspect` (a name), `people` ({ name, type, menace, severity })
- * and `records` ({ key, name, detail }), all with real names.
+ * and `records` ({ key, name, detail }), all with real names, `duo` (a duo
+ * key for two people, else null), and `link`, which turns the names shown on
+ * the card into a link back to this verdict.
  */
 export function openCard(verdict) {
   const dialog = $('card-dialog');
@@ -45,13 +47,29 @@ export function openCard(verdict) {
     }),
   );
 
+  // The link carries the names as shown on the card, so edits travel with it.
+  const link = () => verdict.link(names.map((name) => shown.get(name) || name));
+  const suspectType = verdict.people.find((p) => p.name === verdict.suspect).type;
+  // The punchline, then the link: chat apps show text next to the image.
+  const shownOf = (name) => shown.get(name) || name;
+  const punchline = () =>
+    verdict.duo
+      ? t('duoShareText', { names: names.map(shownOf).join(' & '), type: duoName(verdict.duo) })
+      : t('cardShareText', { name: shownOf(verdict.suspect), type: typeName(suspectType) });
+  const message = () => `${punchline()} ${link()}`;
+
   $('card-share').hidden = !navigator.canShare?.({ files: [new File([], 'x.png', { type: 'image/png' })] });
   $('card-share').onclick = async () => {
     try {
-      await navigator.share({ files: [await asFile(canvas)], text: `${t('cardShareText')} · ${pageUrl()}` });
+      await navigator.share({ files: [await asFile(canvas)], text: message() });
     } catch (error) {
       if (error.name !== 'AbortError') throw error;
     }
+  };
+  $('card-copy').textContent = t('cardCopy');
+  $('card-copy').onclick = async () => {
+    await navigator.clipboard.writeText(link());
+    $('card-copy').textContent = t('cardCopied');
   };
   $('card-download').onclick = async () => {
     const link = Object.assign(document.createElement('a'), {
@@ -71,9 +89,8 @@ async function asFile(canvas) {
   return new File([blob], 'judgeyou.png', { type: 'image/png' });
 }
 
-function pageUrl() {
-  return `${location.host}${location.pathname.replace(/index\.html$/, '')}`.replace(/\/$/, '');
-}
+// The site, not the current page: the share link travels in the message.
+const pageUrl = () => location.host;
 
 function image(src) {
   if (!images.has(src)) {
@@ -88,7 +105,7 @@ function image(src) {
 // new draw, and an older one that finishes late must not paint over it.
 let drawing = 0;
 
-async function drawCard(canvas, { suspect, people, records }, shownName) {
+async function drawCard(canvas, { suspect, duo, people, records }, shownName) {
   const ticket = ++drawing;
   const style = getComputedStyle(document.documentElement);
   const token = (name) => style.getPropertyValue(name).trim();
@@ -128,19 +145,35 @@ async function drawCard(canvas, { suspect, people, records }, shownName) {
 
   // Masthead
   text('JudgeYou', MARGIN, 96, display(700, 44, 'italic'), color.ink, 300);
-  text(t('tagline').toUpperCase(), WIDTH - MARGIN, 92, mono(500, 18), color.muted, inner - 320, 'right');
+  text(t('cardTagline').toUpperCase(), WIDTH - MARGIN, 92, mono(500, 18), color.muted, inner - 320, 'right');
   rule(120, 3);
   rule(127);
 
-  // Prime suspect
-  ctx.drawImage(mascots[people.findIndex((p) => p.name === suspect)], MARGIN - 20, 150, 330, 330);
-  const textX = MARGIN + 340;
-  const textWidth = WIDTH - MARGIN - textX;
-  text(t('suspect').toUpperCase(), textX, 250, mono(500, 22), color.accent, textWidth);
-  const suspectSize = fitSize(ctx, shownName(suspect), (s) => display(800, s), 104, textWidth);
-  text(shownName(suspect), textX, 350, display(800, suspectSize), color.ink, textWidth);
-  text(typeName(suspectType), textX, 405, body(600, 34), color.soft, textWidth);
-  stamp(ctx, t('guilty').toUpperCase(), WIDTH - MARGIN - 130, 455, mono(600, 30), color);
+  if (duo) {
+    // The duo: both specimens, the pair's name and its verdict.
+    ctx.drawImage(mascots[0], MARGIN - 30, 160, 250, 250);
+    ctx.drawImage(mascots[1], MARGIN + 150, 160, 250, 250);
+    const textX = MARGIN + 420;
+    const textWidth = WIDTH - MARGIN - textX;
+    const pair = `${shownName(people[0].name)} & ${shownName(people[1].name)}`;
+    text(t('duo').toUpperCase(), textX, 240, mono(500, 22), color.accent, textWidth);
+    const pairSize = fitSize(ctx, pair, (s) => display(800, s), 84, textWidth);
+    text(pair, textX, 325, display(800, pairSize), color.ink, textWidth);
+    text(duoName(duo), textX, 378, body(600, 32), color.soft, textWidth);
+    ctx.font = display(400, 24, 'italic');
+    lines(ctx, duoNote(duo), textWidth, 2).forEach((line, n) => text(line, textX, 420 + n * 30, ctx.font, color.soft, textWidth));
+    stamp(ctx, t('duoStamp').toUpperCase(), MARGIN + 190, 455, mono(600, 30), color);
+  } else {
+    // Prime suspect
+    ctx.drawImage(mascots[people.findIndex((p) => p.name === suspect)], MARGIN - 20, 150, 330, 330);
+    const textX = MARGIN + 340;
+    const textWidth = WIDTH - MARGIN - textX;
+    text(t('suspect').toUpperCase(), textX, 250, mono(500, 22), color.accent, textWidth);
+    const suspectSize = fitSize(ctx, shownName(suspect), (s) => display(800, s), 104, textWidth);
+    text(shownName(suspect), textX, 350, display(800, suspectSize), color.ink, textWidth);
+    text(typeName(suspectType), textX, 405, body(600, 34), color.soft, textWidth);
+    stamp(ctx, t('guilty').toUpperCase(), WIDTH - MARGIN - 130, 455, mono(600, 30), color);
+  }
 
   // Records: the counted facts, next to Jev's opinions.
   let y = 510;
@@ -162,7 +195,8 @@ async function drawCard(canvas, { suspect, people, records }, shownName) {
 
   // Everyone else, one row each.
   const bottom = HEIGHT - 110;
-  const rowHeight = Math.min(140, (bottom - y - 10) / people.length);
+  // Few people get bigger rows, so a duo's card isn't half empty.
+  const rowHeight = Math.min(people.length <= 2 ? 200 : 140, (bottom - y - 10) / people.length);
   people.forEach((person, i) => {
     const top = y + 10 + i * rowHeight;
     const middle = top + rowHeight / 2;
