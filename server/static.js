@@ -41,6 +41,7 @@ async function publicFiles() {
       throw error;
     });
     await Promise.all(entries.map(async (entry) => {
+      if (entry.name.startsWith('.')) return;
       const file = `${directory}/${entry.name}`;
       if (file === 'js/key.js') return;
       if (entry.isDirectory()) await visit(file);
@@ -73,7 +74,14 @@ async function load(file, slot) {
       if (IMMUTABLE) {
         for (const [encoding, suffix] of [['br', '.br'], ['gzip', '.gz']]) {
           try {
-            variants.set(encoding, Promise.resolve(representation(await fs.readFile(`${path}${suffix}`))));
+            const sidecar = `${path}${suffix}`;
+            const stat = await fs.lstat(sidecar, { bigint: true });
+            if (!stat.isFile() || await fs.realpath(sidecar) !== sidecar) throw new Error('Not a public encoding');
+            const bytes = await fs.readFile(sidecar);
+            if (version(await fs.lstat(sidecar, { bigint: true })) !== version(stat) || await fs.realpath(sidecar) !== sidecar) {
+              throw new Error('Encoding is changing');
+            }
+            variants.set(encoding, Promise.resolve(representation(bytes)));
           } catch (error) {
             if (error.code !== 'ENOENT') throw error;
           }

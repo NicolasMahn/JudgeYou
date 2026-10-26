@@ -228,3 +228,19 @@ test('fingerprinted assets use immutable caching and production serves prepared 
   assert.equal((await get('/assets/notes.js')).headers['cache-control'], 'public, max-age=0, must-revalidate');
   assert.equal((await get('/')).headers['cache-control'], 'public, max-age=0, must-revalidate');
 });
+
+
+test('production refuses prepared encodings that point outside the public tree', async (t) => {
+  const { get, root, content } = await start(t, { production: true });
+  for (const [encoding, extension] of [['br', 'br'], ['gzip', 'gz']]) {
+    const sidecar = join(root, `assets/app-ABCDEFGH.js.${extension}`);
+    await fs.unlink(sidecar);
+    await fs.symlink('../server/secret.txt', sidecar);
+    const response = await get('/assets/app-ABCDEFGH.js', { 'Accept-Encoding': encoding });
+    assert.equal(response.status, 404);
+    assert.ok(!response.body.includes(Buffer.from('private server file')));
+    await fs.unlink(sidecar);
+    await fs.writeFile(sidecar, content[`assets/app-ABCDEFGH.js.${extension}`]);
+  }
+  assert.equal((await get('/assets/app-ABCDEFGH.js', { 'Accept-Encoding': 'br' })).status, 200);
+});

@@ -1,3 +1,6 @@
+This is the historical first-pass report. See the [static-delivery follow-up](performance-r2.md)
+for the later build and repeated same-host comparison.
+
 JudgeYou performance and capacity, measured on 2026-10-26 (Europe/Berlin).
 Baseline: `7be5fb17f5ed`. Raw results include UTC timestamps and the exact
 workload configuration: [baseline](performance/baseline.jsonl),

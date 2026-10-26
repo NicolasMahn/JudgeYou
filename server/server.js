@@ -11,6 +11,7 @@ import { createCapacity, createLimiter } from './limits.js';
 import { createSettings } from './settings.js';
 import { adminAuthorized, serveAdmin } from './admin.js';
 import { serveFile } from './static.js';
+import { prepareAssets } from './assets.js';
 import { DECISIONS_URL, JUDGE_MODEL, SCREENSHOT_MODEL } from './models.js';
 import { openStore } from './store.js';
 import { MAX_SCREENSHOTS, MAX_SCREENSHOT_BYTES, TranscribeError, createTranscriber, invalidScreenshots } from './transcribe.js';
@@ -322,6 +323,10 @@ function fail(res, status, message) {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  if (process.env.BUILT_ASSETS_DIR) {
+    if (!process.env.PUBLIC_DIR) throw new Error('PUBLIC_DIR is required with BUILT_ASSETS_DIR.');
+    await prepareAssets({ builtDir: process.env.BUILT_ASSETS_DIR, assetsDir: join(process.env.PUBLIC_DIR, 'assets') });
+  }
   const port = Number(process.env.PORT ?? 8000);
   const origins = process.env.ALLOWED_ORIGINS ? undefined : [`http://localhost:${port}`];
   const dataDir = process.env.DATA_DIR ?? join(ROOT, 'data');

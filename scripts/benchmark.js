@@ -36,8 +36,9 @@ const HELP = `Usage: node scripts/benchmark.js [options]
 APP_MODULE/--app loads another checkout's unchanged server, using this same harness.
 Example: APP_MODULE=/tmp/baseline/server/server.js node scripts/benchmark.js --journal sealed
 Output is JSON Lines. No production listener, settings, database, or key is used.
-Page = HTML then its local module/CSS/declared-font graph and 12 runtime mascots,
-six parallel assets/client. Other JavaScript-created images and lazy imports are excluded.
+Page = HTML then its static module/CSS/declared-font graph and 12 runtime mascots,
+six parallel assets/client. Dynamically selected locales, service-worker registration,
+other JavaScript-created images and lazy imports are excluded.
 Ready = HTML, startup scripts and styles only; no fonts/images. This measures
 critical-resource delivery, not browser rendering or JavaScript execution.
 Assets = conditional GETs after priming; page = fresh-browser GETs on a warm server.

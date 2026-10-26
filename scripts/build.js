@@ -1,6 +1,6 @@
 import { build } from 'esbuild';
 import { createHash } from 'node:crypto';
-import { cp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { cp, lstat, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
@@ -9,6 +9,19 @@ import { brotliCompress, constants, gzip } from 'node:zlib';
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const DOCUMENTS = ['index.html', 'privacy.html', 'impressum.html'];
 const FILES = ['manifest.webmanifest', 'sw.js', 'favicon.ico', 'robots.txt', 'sitemap.xml'];
+
+// Open source-era tabs still import these public modules and load fonts lazily.
+// Copy only browser file types, never symlinks, keys, maps, or font documentation.
+async function copyLegacy(directory, outdir, extension) {
+  const source = join(ROOT, directory);
+  await cp(source, join(outdir, directory), {
+    recursive: true,
+    filter: async (path) => {
+      const info = await lstat(path);
+      return info.isDirectory() || (info.isFile() && path.endsWith(extension) && path !== join(ROOT, 'js/key.js'));
+    },
+  });
+}
 
 /** Build an independent public directory; source files stay useful without a build. */
 export async function buildSite({ outdir = join(ROOT, 'dist') } = {}) {
@@ -76,8 +89,13 @@ export async function buildSite({ outdir = join(ROOT, 'dist') } = {}) {
     ...DOCUMENTS.map(async (file) => writeFile(join(outdir, file), document(await readFile(join(ROOT, file), 'utf8')))),
     ...FILES.map((file) => cp(join(ROOT, file), join(outdir, file))),
     cp(join(ROOT, 'img'), join(outdir, 'img'), { recursive: true, filter: (path) => path !== join(ROOT, 'img/specimens.svg') }),
+    copyLegacy('js', outdir, '.js'),
+    copyLegacy('css', outdir, '.css'),
+    copyLegacy('fonts', outdir, '.woff2'),
     readFile(join(ROOT, 'server/admin.html'), 'utf8').then((html) => writeFile(join(outdir, 'admin.html'), document(html, true))),
   ]);
+  // Source-era specimen modules reference this URL rather than the hashed sprite.
+  if (sprite) await cp(join(ROOT, 'img/specimens.svg'), join(outdir, 'img/specimens.svg'));
 
   // The benchmark reads the actual static import graph, including CSS font URLs.
   // Lazy modules and full-size result mascots are fetched only when used.

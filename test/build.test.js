@@ -160,7 +160,7 @@ describe('production build', { timeout: 30_000 }, () => {
     }
     assert.ok(dynamic.length > 0, 'The build must preserve dynamic imports');
     const all = reachable(documentScripts(), graph, true);
-    for (const file of files.filter((file) => file.endsWith('.js') && file !== 'sw.js')) {
+    for (const file of files.filter((file) => file.startsWith('assets/') && file.endsWith('.js'))) {
       assert.ok(all.has(`/${file}`), `Unreachable JavaScript output: ${file}`);
     }
   });
@@ -215,12 +215,30 @@ describe('production build', { timeout: 30_000 }, () => {
     }
   });
 
-  test('the public output contains no source tree, private server files, or dependencies', () => {
+  test('legacy modules, styles, and fonts remain available without entering the startup manifest', async () => {
+    for (const [directory, extension] of [['js', '.js'], ['css', '.css'], ['fonts', '.woff2']]) {
+      for (const file of (await filesIn(join(ROOT, directory))).filter((file) => file.endsWith(extension) && file !== 'key.js')) {
+        const path = `${directory}/${file}`;
+        assert.deepEqual(await readFile(join(outdir, path)), await readFile(join(ROOT, path)), path);
+        assert.ok(!manifest.initialAssets.includes(`/${path}`), `${path} enters the startup manifest`);
+      }
+    }
+    for (const module of ['/js/card.js', '/js/sample-answers.js', '/js/locales/de.js', '/js/locales/fr.js', '/js/locales/es.js']) {
+      const imports = reachable([module], graph, true);
+      assert.ok(imports.size > 0);
+      for (const url of imports) await assertFile(url, `legacy module ${module}`);
+    }
+    assert.deepEqual(await readFile(join(outdir, 'img/specimens.svg')), await readFile(join(ROOT, 'img/specimens.svg')));
+  });
+
+  test('the public output contains only browser compatibility files and no private files or dependencies', () => {
     for (const file of files) {
       const original = file.replace(/\.(?:br|gz)$/, '');
-      assert.doesNotMatch(original, /(?:^|\/)(?:js|css|fonts|server|scripts|test|node_modules|data|\.git)(?:\/|$)/, file);
+      assert.doesNotMatch(original, /(?:^|\/)(?:server|scripts|test|node_modules|data|\.git)(?:\/|$)/, file);
       assert.doesNotMatch(original, /(?:^|\/)(?:\.env(?:\..*)?|key\.js|package(?:-lock)?\.json|.*\.(?:pem|key|sqlite(?:3)?|db|map))$/, file);
       assert.ok(original.startsWith('assets/') || original.startsWith('img/') ||
+        /^js\/(?!key\.js$)(?:[\w-]+\/)*[\w-]+\.js$/.test(original) ||
+        /^css\/[\w-]+\.css$/.test(original) || /^fonts\/[\w-]+\.woff2$/.test(original) ||
         /^(?:index\.html|privacy\.html|impressum\.html|admin\.html|manifest\.webmanifest|sw\.js|favicon\.ico|robots\.txt|sitemap\.xml|build-manifest\.json)$/.test(original),
       `Unexpected published file: ${file}`);
     }

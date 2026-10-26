@@ -52,8 +52,24 @@ language and switchable in the header.
 
 ## Run locally
 
+Use Node.js 22 with `OPENROUTER_KEY` supplied through the environment.
+For development, serve the source directly:
+
 ```sh
-OPENROUTER_KEY=sk-or-… npm start   # serves http://localhost:8000
+npm ci
+npm start   # serves http://localhost:8000
+```
+
+To serve the production build locally, stop the development server, then run:
+
+```sh
+npm run build
+PUBLIC_DIR=$PWD/dist npm start
+```
+
+Checks and the local synthetic benchmark make no paid model calls:
+
+```sh
 npm test
 npm run benchmark -- --levels 1,10,32 --duration 2
 ```
@@ -69,12 +85,14 @@ per day (`LIMIT_PER_IP_PER_HOUR`, `LIMIT_PER_DAY`), separately for each. A scrip
 origin, so the caps are what bound the cost; give the key a credit limit on
 OpenRouter as well.
 
-Model work has separate concurrency limits: 32 judgments and 4 screenshot
-requests per process by default, including uploads. Excess requests receive
-503 with `Retry-After`, without consuming an allowance. A 30-second deadline
-cancels stalled uploads/model responses; leaving the page cancels model work.
-These are admission settings, not a guarantee of upstream model capacity or
-a limit on people simply opening the page. See [performance and capacity](docs/performance.md).
+Model work has separate concurrency limits, configurable in `/admin`: 32
+judgments and 4 screenshot requests per process by default, including uploads.
+Excess requests receive 503 with `Retry-After`, without consuming an allowance.
+A 30-second deadline cancels stalled uploads/model responses; leaving the page
+cancels model work.
+These are capacity caps, not proven provider concurrency or a limit on people
+simply opening the page. See the [historical performance report](docs/performance.md)
+and the [R2 performance report](docs/performance-r2.md).
 
 Set a random `ADMIN_TOKEN` of at least 32 characters in the deployment `.env`
 to enable `/admin` (for example, generate one with `openssl rand -hex 32`).
@@ -100,18 +118,19 @@ Without saved dashboard settings, these environment variables set defaults:
 Docker Compose passes the optional admin token; use `/admin` for persistent
 limit changes. Custom environment defaults must also be passed into the
 container if you use them. Invalid settings stop startup. Allowance counters
-are still in memory: restarts reset them and multiple replicas would have
-independent counters and settings. Keep one backend instance until shared
-admission/budget storage is added. Deleting a kept chat has a separate
-allowance and remains possible when judging is paused.
+are still in memory: restarts reset them. Backend replicas need shared settings,
+quotas, admission control and a journal; these are not coordinated across
+instances. Keep one backend instance until that storage and coordination exist.
+Deleting a kept chat has a separate allowance and remains possible when judging
+is paused.
 
-Static text is compressed with Brotli or gzip and revalidated with ETags.
-The production container retains asset bytes in memory until it is replaced;
-development checks for file changes without restarting.
-Images and fonts are cached for a day; their names are not fingerprinted, so
-changes to an existing binary URL can take up to a day to appear. HTML,
-scripts, styles, manifest and service worker always revalidate. Languages,
-sample answers and share-card code load when needed.
+The build emits split JavaScript, CSS, fonts and the specimen sprite under
+content-hashed `/assets/` URLs, cached for a year as immutable. It prepares
+Brotli and gzip copies of generated text assets and HTML. HTML, manifest,
+service worker and other unhashed text revalidate with ETags; unhashed images
+and fonts cache for a day. Languages, sample answers and share-card code load
+when needed. Production uses `NODE_ENV=production` to reuse prepared encodings
+and cache asset bytes in memory; development checks for file changes.
 
 Every forwarded request becomes one row in an SQLite journal
 (`data/judgeyou.db`, see `server/store.js`): metadata and the model's answers, with
@@ -141,6 +160,18 @@ container over the shared Docker network. Pushing to `main` runs the tests and
 then, over SSH, rebuilds the container in `/opt/judgeyou` (secrets
 `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY`). The key lives only in
 `/opt/judgeyou/.env` on the server.
+
+The multi-stage Docker build runs `npm ci` and `npm run build`; the runtime
+serves `/app/dist` without build dependencies. Compose mounts the durable
+`public-assets` volume at `/app/dist/assets`. Before listening, the server
+copies the current image's assets from `/app/built-assets` into that volume
+and prunes assets retired at least seven days ago. Keep the volume across
+deployments so open tabs can still fetch an earlier build's lazy chunks.
+The build also includes legacy public JS, CSS, font and sprite paths for
+source-era tabs, excluding `js/key.js`.
+
+Static delivery currently goes through Caddy to Node. No CDN account exists,
+and none was created for this work.
 
 ## Where things live
 

@@ -13,11 +13,14 @@ services:
     restart: unless-stopped
     volumes:
       - data:/app/data
+      - public-assets:/app/dist/assets
     networks: [edge]
 
 volumes:
   # The journal. Losing it loses every kept chat, so back it up.
   data:
+  # Rebuildable public files; old fingerprinted assets survive container replacement.
+  public-assets:
 
 # The server's only Caddy belongs to the AV_Stuttgart stack; joining its
 # network lets it proxy judge-you.de here without publishing a port.
