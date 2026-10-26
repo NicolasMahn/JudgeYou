@@ -1,0 +1,18 @@
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+     execution: local
+        script: /bench/load.js
+        output: json (/bench/probe.raw.jsonl)
+
+     scenarios: (100.00%) 1 scenario, 1 max VUs, 1m20s max duration (incl. graceful stop):
+              * page: 1 iterations for each of 1 VUs (maxDuration: 1m0s, gracefulStop: 20s)
+
+time="2026-10-26T12:44:57Z" level=info msg="{\"status\":200,\"proto\":\"HTTP/2.0\",\"tls\":\"tls1.3\",\"encoding\":\"br\",\"assets\":25}" source=console
+
+running (0m00.1s), 0/1 VUs, 1 complete and 0 interrupted iterations
+page ✓ [ 100% ] 1 VUs  0m00.1s/1m0s  1/1 iters, 1 per VU
