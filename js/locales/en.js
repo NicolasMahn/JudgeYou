@@ -9,7 +9,6 @@ export default {
   evidence: 'The evidence',
   chatLabel: 'Chat transcript',
   chatPlaceholder: 'Paste a chat or screenshots, or open an export: WhatsApp (also as ZIP), Telegram, Discord, Slack, Messenger, iMessage, CSV…\n\nOr just write it out:\nAna: are you coming tonight?\nBen: k',
-  shotsNotePlaceholder: 'Anything the screenshots don’t show? Add it here, if you like.',
   openFile: 'or open an export',
   openShots: 'Add screenshots',
   readingScreenshots: 'Reading screenshots…',

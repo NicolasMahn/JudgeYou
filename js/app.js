@@ -130,8 +130,7 @@ function onChatChanged() {
   detected = participantsOf(messages).map((p) => p.name);
   if (parsedChat !== chat.value) spared.clear();
   parsedChat = chat.value;
-  // A note beside screenshots names nobody yet; the screenshots will.
-  namesForm.hidden = !chat.value.trim() || !isRawMode() || screenshots.length > 0;
+  namesForm.hidden = !chat.value.trim() || !isRawMode();
   renderSubjects();
   renderScreenshots();
 }
@@ -207,8 +206,7 @@ function clearAll() {
   document.body.classList.remove('is-shared');
   // A shared verdict's address would bring it back on reload.
   if (sharedId()) history.replaceState(null, '', '/');
-  screenshots.forEach(({ url }) => URL.revokeObjectURL(url));
-  screenshots = [];
+  dropScreenshots();
   chat.value = '';
   source = 'paste';
   errorBox.hidden = true;
@@ -227,6 +225,7 @@ async function loadFile(file) {
     resetVerdict();
     chat.value = text;
     source = 'file';
+    dropScreenshots();
     onChatChanged();
     showNextStep($('judge'));
   } catch (error) {
@@ -249,9 +248,9 @@ function addFiles(files, { sort = true } = {}) {
   if (images.length > room) showError(t('errors.tooManyScreenshots', { n: MAX_SCREENSHOTS }));
   const added = (sort ? inTakenOrder(images) : images).slice(0, Math.max(room, 0));
   if (added.length) viewingSharedVerdict = false;
-  // Screenshots start a new chat, so the old one leaves the box rather than
-  // being silently replaced later. What's typed beside them is kept.
-  if (!screenshots.length && added.length) {
+  // Screenshots are a new chat; the box hides until they're read, so nothing
+  // typed or pasted earlier is quietly replaced.
+  if (added.length) {
     chat.value = '';
     source = 'paste';
   }
@@ -269,6 +268,12 @@ function showNextStep(element) {
   element.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
+/** One chat at a time: an export or the sample replaces waiting screenshots. */
+function dropScreenshots() {
+  screenshots.forEach(({ url }) => URL.revokeObjectURL(url));
+  screenshots = [];
+}
+
 function removeScreenshot(index) {
   URL.revokeObjectURL(screenshots[index].url);
   screenshots.splice(index, 1);
@@ -277,7 +282,7 @@ function removeScreenshot(index) {
 
 function renderScreenshots() {
   $('shots').hidden = !screenshots.length;
-  chat.placeholder = t(screenshots.length ? 'shotsNotePlaceholder' : 'chatPlaceholder');
+  chat.hidden = screenshots.length > 0;
   $('shot-list').replaceChildren(
     ...screenshots.map(({ url }, i) => {
       const item = document.createElement('li');
@@ -313,7 +318,7 @@ function consented() {
 
 /**
  * Reads the waiting screenshots into the box, then judges straight away:
- * one button for the whole thing. Anything typed beside them comes first.
+ * one button for the whole thing.
  */
 async function judgeScreenshots() {
   if (!consented()) return;
@@ -326,12 +331,10 @@ async function judgeScreenshots() {
     const images = await Promise.all(screenshots.map(({ file }) => prepareScreenshot(file)));
     const transcript = await readScreenshots(images, localDate());
     if (!transcript.trim()) throw new Error(t('errors.noChatInScreenshots'));
-    const note = chat.value.trim();
     resetVerdict();
-    chat.value = note ? `${note}\n${transcript}` : transcript;
+    chat.value = transcript;
     source = 'screenshots';
-    screenshots.forEach(({ url }) => URL.revokeObjectURL(url));
-    screenshots = [];
+    dropScreenshots();
     onChatChanged();
   } catch (error) {
     showError(error.name === 'InvalidStateError' || error.name === 'EncodingError' ? t('errors.unreadableImage') : apiError(error));
@@ -836,6 +839,7 @@ $('sample').addEventListener('click', () => {
   chat.value = SAMPLES[nextSample].chat;
   nextSample = (nextSample + 1) % SAMPLES.length;
   source = 'sample';
+  dropScreenshots();
   $('sample').dataset.i18n = 'sampleNext';
   $('sample').textContent = t('sampleNext');
   onChatChanged();
