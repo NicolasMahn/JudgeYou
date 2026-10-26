@@ -9,6 +9,7 @@ export default {
   evidence: 'Die Beweislage',
   chatLabel: 'Chatverlauf',
   chatPlaceholder: 'Chat oder Screenshots einfügen oder Export öffnen: WhatsApp (auch als ZIP), Telegram, Discord, Slack, Messenger, iMessage, CSV…\n\nOder einfach abtippen:\nAna: kommst du heute?\nBen: k',
+  shotsNotePlaceholder: 'Fehlt etwas auf den Screenshots? Hier ergänzen, wenn du magst.',
   openFile: 'oder Export öffnen',
   openShots: 'Screenshots hinzufügen',
   readingScreenshots: 'Screenshots werden gelesen…',

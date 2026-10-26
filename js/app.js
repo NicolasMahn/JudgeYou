@@ -130,7 +130,8 @@ function onChatChanged() {
   detected = participantsOf(messages).map((p) => p.name);
   if (parsedChat !== chat.value) spared.clear();
   parsedChat = chat.value;
-  namesForm.hidden = !chat.value.trim() || !isRawMode();
+  // A note beside screenshots names nobody yet; the screenshots will.
+  namesForm.hidden = !chat.value.trim() || !isRawMode() || screenshots.length > 0;
   renderSubjects();
   renderScreenshots();
 }
@@ -248,8 +249,14 @@ function addFiles(files, { sort = true } = {}) {
   if (images.length > room) showError(t('errors.tooManyScreenshots', { n: MAX_SCREENSHOTS }));
   const added = (sort ? inTakenOrder(images) : images).slice(0, Math.max(room, 0));
   if (added.length) viewingSharedVerdict = false;
+  // Screenshots start a new chat, so the old one leaves the box rather than
+  // being silently replaced later. What's typed beside them is kept.
+  if (!screenshots.length && added.length) {
+    chat.value = '';
+    source = 'paste';
+  }
   screenshots.push(...added.map((file) => ({ file, url: URL.createObjectURL(file) })));
-  renderScreenshots();
+  onChatChanged();
   // The screenshots, and below them the box to tick and the button to press.
   $('shots').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -270,6 +277,7 @@ function removeScreenshot(index) {
 
 function renderScreenshots() {
   $('shots').hidden = !screenshots.length;
+  chat.placeholder = t(screenshots.length ? 'shotsNotePlaceholder' : 'chatPlaceholder');
   $('shot-list').replaceChildren(
     ...screenshots.map(({ url }, i) => {
       const item = document.createElement('li');
@@ -285,11 +293,6 @@ function renderScreenshots() {
   updateJudgeButton();
   updateClearButton();
   scheduleDraftSave();
-}
-
-/** A chat someone brought, as opposed to an empty box or our sample. */
-function hasOwnChat() {
-  return Boolean(chat.value.trim()) && source !== 'sample';
 }
 
 /**
@@ -310,8 +313,7 @@ function consented() {
 
 /**
  * Reads the waiting screenshots into the box, then judges straight away:
- * one button for the whole thing. Screenshots that share people with the
- * chat already there continue it; otherwise they are a new chat.
+ * one button for the whole thing. Anything typed beside them comes first.
  */
 async function judgeScreenshots() {
   if (!consented()) return;
@@ -324,10 +326,9 @@ async function judgeScreenshots() {
     const images = await Promise.all(screenshots.map(({ file }) => prepareScreenshot(file)));
     const transcript = await readScreenshots(images, localDate());
     if (!transcript.trim()) throw new Error(t('errors.noChatInScreenshots'));
-    const added = participantsOf(parseChat(transcript)).map((p) => p.name);
-    const continues = hasOwnChat() && added.some((name) => detected.includes(name));
+    const note = chat.value.trim();
     resetVerdict();
-    chat.value = continues ? `${chat.value.trimEnd()}\n${transcript}` : transcript;
+    chat.value = note ? `${note}\n${transcript}` : transcript;
     source = 'screenshots';
     screenshots.forEach(({ url }) => URL.revokeObjectURL(url));
     screenshots = [];
