@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Run with Node 22+. All traffic stays on this process's ephemeral loopback port.
+// Run with Node 22+. All traffic stays on loopback; API calls always use the local fake app.
 import { Agent, request } from 'node:http';
 import { generateKeyPairSync } from 'node:crypto';
 import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
@@ -8,6 +8,7 @@ import { dirname, resolve, join, posix } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { monitorEventLoopDelay } from 'node:perf_hooks';
+import { setMaxListeners } from 'node:events';
 import { DatabaseSync } from 'node:sqlite';
 import { createJournal } from '../server/journal.js';
 import { openStore } from '../server/store.js';
@@ -20,7 +21,7 @@ const HELP = `Usage: node scripts/benchmark.js [options]
   --target-url URL           separate loopback static server; page/assets scenarios only
   --duration SECONDS         admission window per scenario/level (default 2; 0.05–60)
   --warmup SECONDS           unmeasured warmup per scenario/level (default 0.25; 0–10)
-  --levels 1,10,32,100,300    closed-loop clients (each 1–300)
+  --levels 1,10,32,100,300    client levels (each 1–2000; defaults unchanged)
   --scenarios page,ready,assets,model,screenshots
   --model-latency MS         deterministic fake model/transcriber delay (default 100; 0–10000)
   --decisions-cap N          injected maxConcurrent (default 32; 1–512)
@@ -30,6 +31,10 @@ const HELP = `Usage: node scripts/benchmark.js [options]
   --body-bytes N             target decision JSON bytes (default ~64KiB for 2, ~80KiB for 8)
   --timeout MS               absolute workflow timeout (default 15000; 1000–30000)
   --max-iterations N         workflow budget per measured case (default 10000; 1–100000)
+  --max-sockets N            HTTP Agent maxSockets per origin (default 1800; 1–12000)
+  --iterations-per-client N  workflows/client/phase (default 0 = unlimited; 0–10000)
+  --ramp SECONDS             spread first starts over [0, SECONDS) (default 0; 0–60)
+  --timing true|false        bounded HTTP timing distributions (default false)
   --journal-rows N           total model workflow budget including warmup (default 5000; 10–20000)
   --help
 
@@ -43,13 +48,35 @@ Ready = HTML, startup scripts and styles only; no fonts/images. This measures
 critical-resource delivery, not browser rendering or JavaScript execution.
 Assets = conditional GETs after priming; page = fresh-browser GETs on a warm server.
 This is HTTP load in one process, not a browser engine or a count of human users.
+Clients repeat sequential workflows unless --iterations-per-client limits them.
+Ramp starts client i at phase start + i/clients * ramp; it applies independently to
+warmup and measurement. Admission stops at the shared deadline or workflow budget;
+already admitted workflows drain with their original absolute timeout. A workflow
+can issue further page assets during drain. No new workflow starts after deadline.
+One arrival per client: --levels 1000 --duration 60 --warmup 0 --ramp 60
+  --iterations-per-client 1 --scenarios page --timing true
+This schedules 1000 arrivals across 60s, not 1000 simultaneous active people.
+Workflow counts include failures; peakActive counts admitted workflows still running.
+HTTP/workflow rates retain elapsed time including ramp and drain. Client-limited
+phases finish early when all clients finish; admissionWindowMs is the allowed window.
+--max-sockets is per origin, shared across clients (six page assets/client at once);
+the Agent can queue excess HTTP requests. Defaults retain historical workload/metrics.
+--timing adds 0.1ms histograms plus overflow at timeout + 0.1ms, with exact maxima:
+agentQueue = request creation to socket assignment; tcpConnect = assignment to TCP
+connect for connecting sockets (includes DNS if localhost); newSocketTtfb and
+reusedSocketTtfb = request creation to response headers, including Agent queue/connect;
+bodyRead = response headers to end of body. TTFB is headers arrival, not first data byte.
+Only observed events contribute; failed requests can have queue/connect but no
+headers/body samples. Connections count socket assignments by new/reused physical
+socket, including reuse from preflight/warmup; they are not concurrent socket counts.
+Timing is absent and its histograms/listeners are disabled unless explicitly enabled.
 Screenshots use one tiny synthetic JPEG data URL; this does not measure max-size image capacity.
 Older createApp implementations may ignore injected capacity settings; inspect 503 rates.
 Decision fixtures use real typed questions and answers. State must fit 64KiB,
 questions <=64, and HTTP JSON <=256KiB; incompatible --body-bytes fails before load.
 `;
 
-function options(args) {
+export function options(args) {
   const values = {};
   for (let i = 0; i < args.length; i++) {
     const match = /^--([a-z-]+)(?:=(.*))?$/.exec(args[i]);
@@ -59,21 +86,23 @@ function options(args) {
     if (value === undefined || value.startsWith('--')) throw new Error(`Missing value for --${match[1]}`);
     values[match[1]] = value;
   }
-  const known = ['app', 'public-dir', 'target-url', 'duration', 'warmup', 'levels', 'scenarios', 'model-latency', 'decisions-cap', 'screenshots-cap', 'journal', 'subjects', 'body-bytes', 'timeout', 'max-iterations', 'journal-rows'];
+  const known = ['app', 'public-dir', 'target-url', 'duration', 'warmup', 'levels', 'scenarios', 'model-latency', 'decisions-cap', 'screenshots-cap', 'journal', 'subjects', 'body-bytes', 'timeout', 'max-iterations', 'journal-rows', 'max-sockets', 'iterations-per-client', 'ramp', 'timing'];
   for (const name of Object.keys(values)) if (!known.includes(name)) throw new Error(`Unknown option: --${name}`);
   const number = (name, fallback, min, max, integer = false) => {
     const value = Number(values[name] ?? fallback);
-    if (!Number.isFinite(value) || value < min || value > max || (integer && !Number.isSafeInteger(value))) {
+    if (values[name]?.trim() === '' || !Number.isFinite(value) || value < min || value > max || (integer && !Number.isSafeInteger(value))) {
       throw new Error(`--${name} must be ${integer ? 'an integer' : 'a number'} from ${min} to ${max}`);
     }
     return value;
   };
   const levels = (values.levels ?? '1,10,32,100,300').split(',').map(Number);
-  if (!levels.length || levels.length > 10 || levels.some((level) => !Number.isInteger(level) || level < 1 || level > 300)) throw new Error('Use 1–10 client levels, each from 1 to 300');
+  if (!levels.length || levels.length > 10 || levels.some((level) => !Number.isInteger(level) || level < 1 || level > 2000)) throw new Error('Use 1–10 client levels, each from 1 to 2000');
   const scenarios = (values.scenarios ?? 'page,assets,model,screenshots').split(',');
   if (!scenarios.length || scenarios.length > 5 || scenarios.some((name) => !['page', 'ready', 'assets', 'model', 'screenshots'].includes(name))) throw new Error('Unknown or excessive scenarios');
   const journal = values.journal ?? 'off';
   if (!['off', 'metadata', 'sealed'].includes(journal)) throw new Error('--journal must be off, metadata, or sealed');
+  const timing = values.timing ?? 'false';
+  if (!['true', 'false'].includes(timing)) throw new Error('--timing must be true or false');
   const app = values.app ?? process.env.APP_MODULE ?? fileURLToPath(new URL('../server/server.js', import.meta.url));
   const appURL = app.startsWith('file:') ? new URL(app) : pathToFileURL(resolve(app));
   if (appURL.protocol !== 'file:') throw new Error('--app must be a local file');
@@ -91,6 +120,8 @@ function options(args) {
     decisionsCap: number('decisions-cap', 32, 1, 512, true), screenshotsCap: number('screenshots-cap', 4, 1, 64, true),
     subjects, bodyBytes: number('body-bytes', 65536 + (subjects - 2) * 2700, 1024, 204800, true), timeoutMs: number('timeout', 15000, 1000, 30000, true),
     maxIterations: number('max-iterations', 10000, 1, 100000, true), journalRows: number('journal-rows', 5000, 10, 20000, true),
+    maxSockets: number('max-sockets', 1800, 1, 12000, true), iterationsPerClient: number('iterations-per-client', 0, 0, 10000, true),
+    ramp: number('ramp', 0, 0, 60), timing: timing === 'true',
   };
 }
 
@@ -206,7 +237,8 @@ async function run(config) {
   let publicKey;
   let journalWrites = 0;
   let stop = false;
-  const interrupt = () => { stop = true; server?.closeAllConnections(); };
+  let pendingAdmissions;
+  const interrupt = () => { stop = true; pendingAdmissions?.abort(); server?.closeAllConnections(); };
   process.once('SIGINT', interrupt);
   process.once('SIGTERM', interrupt);
   try {
@@ -247,7 +279,8 @@ async function run(config) {
     await new Promise((done, reject) => { server.once('error', reject); server.listen({ port: 0, host: '127.0.0.1', backlog: LISTEN_BACKLOG }, done); });
     const port = server.address().port;
     const target = config.targetUrl ? new URL(config.targetUrl) : null;
-    agent = new Agent({ keepAlive: true, maxSockets: 1800, maxFreeSockets: 300 });
+    agent = new Agent({ keepAlive: true, maxSockets: config.maxSockets, maxFreeSockets: 300 });
+    const seenSockets = config.timing ? new WeakSet() : null;
     const etags = new Map();
     const body = fixture.body;
     const screenshot = JSON.stringify({ images: ['data:image/jpeg;base64,YmVuY2htYXJr'], today: '2026-10-25' });
@@ -257,6 +290,8 @@ async function run(config) {
       if (conditional && etags.has(path)) headers['If-None-Match'] = etags.get(path);
       if (payload) Object.assign(headers, { Origin: 'http://benchmark.local', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) });
       let settled = false;
+      const timing = stats?.timing;
+      let reusedSocket = false;
       const finish = (status, bytes = 0, responseHeaders = {}) => {
         if (settled) return;
         settled = true;
@@ -272,10 +307,33 @@ async function run(config) {
         done({ ok, status, headers: responseHeaders });
       };
       const req = request({ hostname: !payload && target ? target.hostname.replace(/^\[|\]$/g, '') : '127.0.0.1', port: !payload && target ? Number(target.port || 80) : port, path, method: payload ? 'POST' : 'GET', headers, agent, signal }, (res) => {
+        const headersAt = timing ? performance.now() : 0;
+        if (timing) (reusedSocket ? timing.reusedSocketTtfb : timing.newSocketTtfb).add(headersAt - started);
         let bytes = 0;
         res.on('data', (chunk) => { bytes += chunk.length; });
         res.once('error', () => finish('transport-error'));
-        res.once('end', () => finish(res.statusCode, bytes, res.headers));
+        res.once('end', () => {
+          if (timing) timing.bodyRead.add(performance.now() - headersAt);
+          finish(res.statusCode, bytes, res.headers);
+        });
+      });
+      if (seenSockets) req.once('socket', (socket) => {
+        reusedSocket = seenSockets.has(socket);
+        seenSockets.add(socket);
+        if (!timing) return;
+        const assignedAt = performance.now();
+        timing.agentQueue.add(assignedAt - started);
+        timing.connections[reusedSocket ? 'reused' : 'new']++;
+        if (socket.connecting) {
+          const connected = () => {
+            socket.removeListener('close', closed);
+            timing.tcpConnect.add(performance.now() - assignedAt);
+          };
+          const closed = () => socket.removeListener('connect', connected);
+          socket.once('connect', connected);
+          // A failed connection has no connect sample and must not retain phase stats.
+          socket.once('close', closed);
+        }
       });
       req.once('error', () => finish('transport-error'));
       req.end(payload);
@@ -295,7 +353,17 @@ async function run(config) {
       listenBacklog: LISTEN_BACKLOG,
       availableParallelism: availableParallelism(), cpuModel: cpus()[0]?.model, memoryBytes: totalmem(), uvThreadpoolSize: process.env.UV_THREADPOOL_SIZE ?? 'Node default',
       network: 'Ephemeral 127.0.0.1 only; fake upstream/transcriber; external fetch disabled',
-      measurement: `Closed-loop clients, not users. ${target ? 'Static target runs separately; process metrics cover the generator only. Apply the same combined container resource budget.' : 'Server and HTTP load generator share this process.'} RPS includes failures and drain time. Page graph includes all declared CSS fonts and runtime mascots; other JavaScript-created images and lazy imports excluded. No JavaScript execution. Static assets primed before timing. Screenshots use one tiny synthetic JPEG data URL, not max-size images.`,
+      measurement: `${config.iterationsPerClient === 1 ? 'One workflow per scheduled client, not users.' : 'Closed-loop clients, not users.'} ${target ? 'Static target runs separately; process metrics cover the generator only. Apply the same combined container resource budget.' : 'Server and HTTP load generator share this process.'} RPS includes failures and drain time. Page graph includes all declared CSS fonts and runtime mascots; other JavaScript-created images and lazy imports excluded. No JavaScript execution. Static assets primed before timing. Screenshots use one tiny synthetic JPEG data URL, not max-size images.`,
+      workload: `Each client repeats sequential workflows, up to iterationsPerClient (0 = unlimited). First starts are scheduled at phase start + clientIndex/clients * ramp, independently in warmup and measurement. No workflow admission after the shared phase deadline or iteration budget; admitted workflows drain. Client-limited phases may finish before admissionWindowMs. Rates include ramp and drain. maxSockets is per origin, shared by all clients.`,
+      ...(config.timing ? { timingDefinitions: {
+        agentQueue: 'Request creation to socket assignment; includes Agent queue and scheduling delay.',
+        tcpConnect: 'Socket assignment to connect event for connecting TCP sockets; includes DNS when using localhost. Failed connections have no sample.',
+        newSocketTtfb: 'Request creation to response headers on a newly observed physical socket; includes queue/connect, not first body byte.',
+        reusedSocketTtfb: 'Request creation to response headers on a previously observed physical socket, including preflight/warmup sockets; includes queue.',
+        bodyRead: 'Response headers to complete response body; only responses reaching end have samples.',
+        connections: 'Measured request socket assignments, split by new/reused physical socket; not concurrent connections. Requests aborted before assignment are excluded.',
+        histograms: 'Counts of observed events; 0.1ms buckets plus overflow at timeoutMs + 0.1ms, exact maxMs. Errors may lack later events. No timing histograms/listeners when timing=false.',
+      } } : {}),
       capacity: 'Injected settings; older apps may ignore them. Quota limiters bypassed. 503 is reported separately.',
       journalStorage: config.journal === 'off' ? 'disabled' : 'temporary SQLite WAL; generated RSA-2048 key; deleted on exit',
       decisionBytes: Buffer.byteLength(body), stateBytes: fixture.stateBytes, questionCount: fixture.questionCount, responseBytes: Buffer.byteLength(fixture.response), assetsPerPage: assets.length, assets,
@@ -306,6 +374,10 @@ async function run(config) {
       if (stop) break;
       async function phase(seconds, measured) {
         const stats = { http: distribution(config.timeoutMs), success: distribution(config.timeoutMs), failure: distribution(config.timeoutMs), unavailable: distribution(config.timeoutMs), workflows: distribution(config.timeoutMs), statuses: {}, bytes: 0, httpErrors: 0, workflowErrors: 0 };
+        if (measured && config.timing) stats.timing = {
+          ...Object.fromEntries(['agentQueue', 'tcpConnect', 'newSocketTtfb', 'reusedSocketTtfb', 'bodyRead'].map((name) => [name, distribution(config.timeoutMs)])),
+          connections: { new: 0, reused: 0 },
+        };
         const eventLoop = monitorEventLoopDelay({ resolution: 10 });
         if (measured) eventLoop.enable();
         const cpu = process.cpuUsage();
@@ -313,10 +385,28 @@ async function run(config) {
         const deadline = started + seconds * 1000;
         const cap = scenario === 'model' && journal ? Math.min(config.maxIterations, journalBudgetPerPhase) : config.maxIterations;
         let admitted = 0;
+        let completed = 0;
+        let active = 0;
+        let peakActive = 0;
+        const admissions = config.ramp ? new AbortController() : null;
+        // At most one bounded ramp wait per client shares this cancellation signal.
+        if (admissions) setMaxListeners(clients + 1, admissions.signal);
+        pendingAdmissions = admissions;
         await Promise.all(Array.from({ length: clients }, async (_, client) => {
           let iteration = 0;
-          while (!stop && performance.now() < deadline && admitted < cap) {
+          if (admissions) {
+            const firstStart = Math.min(deadline, started + client / clients * config.ramp * 1000);
+            while (!stop && !admissions.signal.aborted && performance.now() < firstStart) {
+              await sleep(Math.ceil(firstStart - performance.now()), undefined, { signal: admissions.signal }).catch((error) => {
+                if (error.name !== 'AbortError') throw error;
+              });
+            }
+          }
+          while (!stop && performance.now() < deadline && admitted < cap && (!config.iterationsPerClient || iteration < config.iterationsPerClient)) {
             admitted++;
+            active++;
+            peakActive = Math.max(peakActive, active);
+            if (admitted >= cap) admissions?.abort();
             const begun = performance.now();
             const signal = AbortSignal.timeout(config.timeoutMs);
             const measuredStats = measured ? stats : null;
@@ -335,24 +425,28 @@ async function run(config) {
               ok = (await issue(scenario === 'model' ? '/api/decisions' : '/api/screenshots', signal, measuredStats, false, scenario === 'model' ? body : screenshot)).ok;
             }
             iteration++;
+            completed++;
+            active--;
             if (measured) {
               stats.workflows.add(performance.now() - begun);
               if (!ok) stats.workflowErrors++;
             }
           }
         }));
+        pendingAdmissions = null;
         const elapsedMs = performance.now() - started;
         eventLoop.disable();
         if (!measured) return;
         const http = stats.http.summary();
         const workflows = stats.workflows.summary();
         const used = process.cpuUsage(cpu);
-        output({ type: 'result', scenario, clients, closedLoop: true, admissionWindowMs: seconds * 1000, elapsedMs: round(elapsedMs),
-          stopped: stop ? 'signal' : admitted >= cap ? 'iteration-budget' : 'duration', iterationBudget: cap,
+        output({ type: 'result', scenario, clients, closedLoop: config.iterationsPerClient !== 1, admissionWindowMs: seconds * 1000, elapsedMs: round(elapsedMs),
+          stopped: stop ? 'signal' : admitted >= cap ? 'iteration-budget' : config.iterationsPerClient && completed === clients * config.iterationsPerClient ? 'client-iterations' : 'duration', iterationBudget: cap,
           http: { ...http, success: stats.success.summary(), failure: stats.failure.summary(), unavailable503: stats.unavailable.summary(), rps: round(http.count / (elapsedMs / 1000)), successfulRps: round(stats.success.summary().count / (elapsedMs / 1000)), errorRate: http.count ? stats.httpErrors / http.count : 0, statuses: stats.statuses,
             statusRates: Object.fromEntries(Object.entries(stats.statuses).map(([status, count]) => [status, count / http.count])),
             unavailable503Rate: (stats.statuses[503] ?? 0) / (http.count || 1), bytes: stats.bytes },
-          workflows: { ...workflows, perSecond: round(workflows.count / (elapsedMs / 1000)), errorRate: workflows.count ? stats.workflowErrors / workflows.count : 0 },
+          workflows: { ...workflows, admitted, completed, peakActive, perSecond: round(workflows.count / (elapsedMs / 1000)), errorRate: workflows.count ? stats.workflowErrors / workflows.count : 0 },
+          ...(stats.timing ? { timing: Object.fromEntries(Object.entries(stats.timing).map(([name, value]) => [name, name === 'connections' ? value : value.summary()])) } : {}),
           process: { cpuUserMs: round(used.user / 1000), cpuSystemMs: round(used.system / 1000), rssBytes: process.memoryUsage().rss, peakRssKiB: process.resourceUsage().maxRSS },
           eventLoop: { sampleIntervalMs: 10, samples: eventLoop.count, p50Ms: eventLoop.count ? round(eventLoop.percentile(50) / 1e6) : null, p95Ms: eventLoop.count ? round(eventLoop.percentile(95) / 1e6) : null, maxMs: round(eventLoop.max / 1e6) },
         });
@@ -391,11 +485,13 @@ async function run(config) {
   }
 }
 
-try {
-  const config = options(process.argv.slice(2));
-  if (config) await run(config);
-  else console.log(HELP);
-} catch (error) {
-  console.error(`Benchmark failed: ${error.message}`);
-  process.exitCode = 1;
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+  try {
+    const config = options(process.argv.slice(2));
+    if (config) await run(config);
+    else console.log(HELP);
+  } catch (error) {
+    console.error(`Benchmark failed: ${error.message}`);
+    process.exitCode = 1;
+  }
 }
