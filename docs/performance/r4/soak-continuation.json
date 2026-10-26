@@ -1,0 +1,6 @@
+{
+  "at": "2026-10-26T14:28:37.541816+00:00",
+  "priorRunnerElapsedSeconds": 40.04,
+  "remainingBudgetSeconds": 319,
+  "higherBurstSkipped": "1 GiB origin burst aborted by host available-memory guard; no retry or 2000 burst"
+}

@@ -1,0 +1,24 @@
+{
+  "at": "2026-10-26T14:43:56.961386+00:00",
+  "applicationTests": 148,
+  "pythonMonitorTests": 31,
+  "systemdUnitVerification": "passed",
+  "hostCollectorSmoke": {
+    "target": "disposable isolated container on existing host; Docker-name shim maps collector to test container",
+    "memoryBudgetBytes": 201326592,
+    "cpuQuota": 0.25,
+    "status": "ok",
+    "delivery": "dry_run",
+    "allCollectorsAvailable": true,
+    "newPrivateHealthEndpointAuthenticated": true,
+    "quotaFraction": 0,
+    "notificationSent": false,
+    "productionAppChanged": false,
+    "ownedContainerRemoved": true
+  },
+  "sourceSha256": {
+    "ops/monitor.py": "fd97fce2fdd55dfd7ce14d397f3195228f0a641edbcf261ff3ea67cf8666f0ec",
+    "server/server.js": "5b9f4b2f81a6704375c467ddb28b7fe7016372c5ec4a8be08b90ef33b3851e20",
+    "server/telemetry.js": "87370fab79839835f6218f2d46756e4aec0f980ebefc0b609d439dd9e00c0992"
+  }
+}

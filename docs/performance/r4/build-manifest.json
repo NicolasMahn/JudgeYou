@@ -1,0 +1,41 @@
+{
+  "initialAssets": [
+    "/assets/Fraunces-body-italic-400-900-latin-4OX26PPF.woff2",
+    "/assets/Fraunces-body-italic-400-900-latin-ext-UYF3BEKL.woff2",
+    "/assets/Fraunces-body-normal-400-900-latin-YN5KNR7I.woff2",
+    "/assets/Fraunces-body-normal-400-900-latin-ext-X4TRXHLL.woff2",
+    "/assets/Fraunces-hero-italic-400-900-latin-S4KMOKOD.woff2",
+    "/assets/Fraunces-hero-italic-400-900-latin-ext-EJBINWUH.woff2",
+    "/assets/Fraunces-hero-normal-400-900-latin-JPRW5VAG.woff2",
+    "/assets/Fraunces-hero-normal-400-900-latin-ext-NHIK73VC.woff2",
+    "/assets/IBMPlexMono-normal-400-latin-A2WATXFY.woff2",
+    "/assets/IBMPlexMono-normal-400-latin-ext-T6XOR2FX.woff2",
+    "/assets/IBMPlexMono-normal-500-latin-33HAQIPI.woff2",
+    "/assets/IBMPlexMono-normal-500-latin-ext-LJE4XY22.woff2",
+    "/assets/IBMPlexMono-normal-600-latin-IIV3OB4N.woff2",
+    "/assets/IBMPlexMono-normal-600-latin-ext-IEJYURAG.woff2",
+    "/assets/IBMPlexSans-normal-400-700-latin-R33FXSIT.woff2",
+    "/assets/IBMPlexSans-normal-400-700-latin-ext-W3JOXA4Q.woff2",
+    "/assets/app-6IJRT6SZ.js",
+    "/assets/chunk-LYJE6VP7.js",
+    "/assets/chunk-YBRWN7S3.js",
+    "/assets/site-6KIHWRD5.css",
+    "/assets/specimens-ddc965e3f6d962f4.svg",
+    "/favicon.ico",
+    "/img/apple-touch-icon.png",
+    "/img/favicon-96.png",
+    "/manifest.webmanifest"
+  ],
+  "entries": {
+    "js/sample-answers.js": "/assets/chunk-GAMFIPRR.js",
+    "js/card.js": "/assets/chunk-URMMNDBH.js",
+    "js/app.js": "/assets/app-6IJRT6SZ.js",
+    "js/admin.js": "/assets/admin-YJNYFC5K.js",
+    "js/privacy.js": "/assets/privacy-PFBFUSD2.js",
+    "js/locales/de.js": "/assets/chunk-HURUR7W4.js",
+    "js/locales/fr.js": "/assets/chunk-VTZAGOAX.js",
+    "js/locales/es.js": "/assets/chunk-LFLF4CBB.js",
+    "css/site.css": "/assets/site-6KIHWRD5.css",
+    "css/admin-site.css": "/assets/admin-site-AFINRPJQ.css"
+  }
+}

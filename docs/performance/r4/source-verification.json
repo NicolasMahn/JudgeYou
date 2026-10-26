@@ -1,0 +1,7 @@
+{
+  "checkedAgainstGitCommit": "d05c8b7",
+  "server/server.js": "d383de7998d70b020f62809f356f657fd9f9fed3693cb5b4b32d1feb57d66e61",
+  "server/static.js": "00e9e4a0cd186e85f10fb4da67d627d2d1d4ac37f7e4d9541f5aceea1df975b6",
+  "buildManifestSHA256": "417713c6f67ccb4e33a34fbb81d1b153002ced4732d0a1c4a632f6c688e5c7e8",
+  "method": "git show d05c8b7:<path> | sha256sum matches prior and reused remote source hashes"
+}

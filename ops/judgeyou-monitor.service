@@ -1,0 +1,21 @@
+[Unit]
+Description=JudgeYou host and application monitoring
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# Host /proc, cgroups and the Docker socket intentionally require root access.
+User=root
+Group=root
+ExecStart=/usr/bin/python3 /opt/judgeyou/ops/monitor.py --config /etc/judgeyou-monitor/config.json --state /var/lib/judgeyou-monitor/state.json
+Nice=10
+TimeoutStartSec=50s
+UMask=0077
+StateDirectory=judgeyou-monitor
+StateDirectoryMode=0700
+ProtectSystem=strict
+ReadWritePaths=/var/lib/judgeyou-monitor
+ProtectHome=yes
+PrivateTmp=yes
+NoNewPrivileges=yes

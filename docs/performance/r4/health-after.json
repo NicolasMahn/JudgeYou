@@ -1,0 +1,31 @@
+{
+  "at": "2026-10-26T14:26:31.373923+00:00",
+  "availableBytes": 2607374336,
+  "production": [
+    {
+      "name": "judgeyou",
+      "running": true,
+      "health": null,
+      "restartCount": 0,
+      "id": "5d331311a1b2f84ff3ad57918dfaed4142fdbaf3133bee03d351cbb2918c89df"
+    },
+    {
+      "name": "av-stuttgart-caddy",
+      "running": true,
+      "health": null,
+      "restartCount": 0,
+      "id": "5a31633f7ae191827bee532f367d435c44bc03742c53842cb917d3dcc9d9afa0"
+    },
+    {
+      "name": "av-stuttgart-app",
+      "running": true,
+      "health": "healthy",
+      "restartCount": 0,
+      "id": "efa6b8ceca5c8ce13be740ac8f5644a045e25e6277cd7566c39050024ad0d486"
+    }
+  ],
+  "http": {
+    "judge-you.de": "200",
+    "acvi-stuttgart.de": "200"
+  }
+}

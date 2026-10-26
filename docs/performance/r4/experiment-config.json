@@ -1,0 +1,66 @@
+{
+  "sourceCommit": "d05c8b7",
+  "worktreeHeadAtStart": "cddb8252e7f327daba5fd8ff8ff36a7a577921a5",
+  "priorRemoteEvidence": "/tmp/judgeyou-h2-independent-c1Ksrvpc",
+  "remoteEvidence": "/tmp/judgeyou-r4-isolated-0W1TixAp",
+  "localEvidence": "/tmp/judgeyou-r4-evidence-YAwcdQsA",
+  "resourceGraph": "26 resources: GET / plus 25 build-manifest initialAssets; six-asset batches; same audited all-font graph",
+  "origin": {
+    "cpu": 1,
+    "memory": [
+      "512MiB",
+      "1GiB"
+    ],
+    "swap": "disabled",
+    "network": "none",
+    "publishedPorts": [],
+    "components": [
+      "Node 22.23.4",
+      "Caddy 2.11.7"
+    ],
+    "externalFetch": "disabled in probe",
+    "apiKey": "dummy probe-not-a-real-key",
+    "models": "no model requests; external fetch throws"
+  },
+  "generator": {
+    "k6": "1.3.0 ARM64 checksum verified in prior evidence",
+    "cpu": 1,
+    "memory": "1GiB",
+    "network": "shares isolated origin namespace",
+    "connections": "fresh per page workflow; TLS resumption not disabled",
+    "GOMEMLIMIT": "850MiB"
+  },
+  "totalResourceCeiling": {
+    "cpu": 2,
+    "memory": "2GiB",
+    "sharedHost": "2 vCPU ~4GB; test CPU budgets not exclusive"
+  },
+  "guards": {
+    "MemAvailableBytesMustExceed": 1073741824,
+    "availableMemoryPollSeconds": 0.2,
+    "siteHealthCheckSeconds": 5,
+    "productionMustRemain": [
+      "same container IDs",
+      "running",
+      "no restart increase",
+      "AV healthy",
+      "both home pages HTTP 200"
+    ],
+    "combinedRunnerTimeBudgetSeconds": 360,
+    "measuredBurstCountAt512MiB": 2
+  },
+  "acceptanceThresholds": {
+    "workflowSuccessRate": 1,
+    "HTTP2Rate": 1,
+    "failedRequests": 0,
+    "successfulWorkflowP95MsLessThan": 5000,
+    "pacedDroppedIterations": 0,
+    "workflowAbsoluteDeadlineMs": 15000
+  },
+  "reproduction": [
+    "Prepare an owned /tmp directory on the existing remote host. Copy (or hard-link read-only source/binaries) source/, caddy, k6-v1.3.0-linux-arm64/, image, and judgeyou-r3-probe-server.mjs from priorRemoteEvidence. Copy run.py, load.js, origin.sh, Caddyfile here. Do not use absolute symlinks because /bench is the only bind mount.",
+    "Run python3 run.py there. It aborts and removes only owned containers if any guard fails. Every case creates a fresh origin and runs one single-workflow warm probe.",
+    "resume-soak.py is the documented continuation actually used after the host guard aborted the 1GiB burst; it only runs the lower-memory three-minute soak and retains the combined 360s runner cap. Do not blindly replay completed bursts.",
+    "Run python3 analyze.py <evidence_directory> after load completes. Full k6 streams stay in /tmp; outcome.json records their hashes."
+  ]
+}

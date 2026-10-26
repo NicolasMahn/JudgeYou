@@ -1,0 +1,222 @@
+{
+  "Id": "b0f8e6e88ff80b705d42aec4b1b107f0d1a0d2fee8aa18661bfabcb794e59acb",
+  "Created": "2026-10-26T14:28:37.689215031Z",
+  "Path": "sh",
+  "Args": [
+    "/bench/origin.sh"
+  ],
+  "State": {
+    "Status": "running",
+    "Running": true,
+    "Paused": false,
+    "Restarting": false,
+    "OOMKilled": false,
+    "Dead": false,
+    "Pid": 1026493,
+    "ExitCode": 0,
+    "Error": "",
+    "StartedAt": "2026-10-26T14:28:37.756108405Z",
+    "FinishedAt": "0001-01-01T00:00:00Z"
+  },
+  "Image": "sha256:7b7c0f2074ba7d7a0616f9478e02123bb82e2169853ff4ebb557a48d93b4f416",
+  "ResolvConfPath": "/var/lib/docker/containers/b0f8e6e88ff80b705d42aec4b1b107f0d1a0d2fee8aa18661bfabcb794e59acb/resolv.conf",
+  "HostnamePath": "/var/lib/docker/containers/b0f8e6e88ff80b705d42aec4b1b107f0d1a0d2fee8aa18661bfabcb794e59acb/hostname",
+  "HostsPath": "/var/lib/docker/containers/b0f8e6e88ff80b705d42aec4b1b107f0d1a0d2fee8aa18661bfabcb794e59acb/hosts",
+  "LogPath": "/var/lib/docker/containers/b0f8e6e88ff80b705d42aec4b1b107f0d1a0d2fee8aa18661bfabcb794e59acb/b0f8e6e88ff80b705d42aec4b1b107f0d1a0d2fee8aa18661bfabcb794e59acb-json.log",
+  "Name": "/judgeyou-r4-0W1TixAp-origin",
+  "RestartCount": 0,
+  "Driver": "overlayfs",
+  "Platform": "linux",
+  "MountLabel": "",
+  "ProcessLabel": "",
+  "AppArmorProfile": "docker-default",
+  "ExecIDs": null,
+  "HostConfig": {
+    "Binds": [
+      "/tmp/judgeyou-r4-isolated-0W1TixAp:/bench:ro"
+    ],
+    "ContainerIDFile": "",
+    "LogConfig": {
+      "Type": "json-file",
+      "Config": {}
+    },
+    "NetworkMode": "none",
+    "PortBindings": {},
+    "RestartPolicy": {
+      "Name": "no",
+      "MaximumRetryCount": 0
+    },
+    "AutoRemove": false,
+    "VolumeDriver": "",
+    "VolumesFrom": null,
+    "ConsoleSize": [
+      0,
+      0
+    ],
+    "CapAdd": null,
+    "CapDrop": null,
+    "CgroupnsMode": "private",
+    "Dns": null,
+    "DnsOptions": [],
+    "DnsSearch": [],
+    "ExtraHosts": null,
+    "GroupAdd": null,
+    "IpcMode": "private",
+    "Cgroup": "",
+    "Links": null,
+    "OomScoreAdj": 0,
+    "PidMode": "",
+    "Privileged": false,
+    "PublishAllPorts": false,
+    "ReadonlyRootfs": false,
+    "SecurityOpt": null,
+    "Tmpfs": {
+      "/tmp": "rw,size=64m"
+    },
+    "UTSMode": "",
+    "UsernsMode": "",
+    "ShmSize": 67108864,
+    "Runtime": "runc",
+    "Isolation": "",
+    "CpuShares": 0,
+    "Memory": 536870912,
+    "NanoCpus": 1000000000,
+    "CgroupParent": "",
+    "BlkioWeight": 0,
+    "BlkioWeightDevice": [],
+    "BlkioDeviceReadBps": [],
+    "BlkioDeviceWriteBps": [],
+    "BlkioDeviceReadIOps": [],
+    "BlkioDeviceWriteIOps": [],
+    "CpuPeriod": 0,
+    "CpuQuota": 0,
+    "CpuRealtimePeriod": 0,
+    "CpuRealtimeRuntime": 0,
+    "CpusetCpus": "",
+    "CpusetMems": "",
+    "Devices": [],
+    "DeviceCgroupRules": null,
+    "DeviceRequests": null,
+    "MemoryReservation": 0,
+    "MemorySwap": 536870912,
+    "MemorySwappiness": null,
+    "OomKillDisable": null,
+    "PidsLimit": 256,
+    "Ulimits": [],
+    "CpuCount": 0,
+    "CpuPercent": 0,
+    "IOMaximumIOps": 0,
+    "IOMaximumBandwidth": 0,
+    "MaskedPaths": [
+      "/proc/acpi",
+      "/proc/asound",
+      "/proc/interrupts",
+      "/proc/kcore",
+      "/proc/keys",
+      "/proc/latency_stats",
+      "/proc/sched_debug",
+      "/proc/scsi",
+      "/proc/timer_list",
+      "/proc/timer_stats",
+      "/sys/devices/virtual/powercap",
+      "/sys/firmware"
+    ],
+    "ReadonlyPaths": [
+      "/proc/bus",
+      "/proc/fs",
+      "/proc/irq",
+      "/proc/sys",
+      "/proc/sysrq-trigger"
+    ]
+  },
+  "Storage": {
+    "RootFS": {
+      "Snapshot": {
+        "Name": "overlayfs"
+      }
+    }
+  },
+  "Mounts": [
+    {
+      "Type": "bind",
+      "Source": "/tmp/judgeyou-r4-isolated-0W1TixAp",
+      "Destination": "/bench",
+      "Mode": "ro",
+      "RW": false,
+      "Propagation": "rprivate"
+    }
+  ],
+  "Config": {
+    "Hostname": "b0f8e6e88ff8",
+    "Domainname": "",
+    "User": "0:0",
+    "AttachStdin": false,
+    "AttachStdout": false,
+    "AttachStderr": false,
+    "ExposedPorts": {
+      "8000/tcp": {}
+    },
+    "Tty": false,
+    "OpenStdin": false,
+    "StdinOnce": false,
+    "Env": [
+      "HOME=/tmp",
+      "XDG_DATA_HOME=/tmp/caddy-data",
+      "XDG_CONFIG_HOME=/tmp/caddy-config",
+      "PUBLIC_DIR=/bench/source/dist",
+      "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+      "NODE_VERSION=22.23.4",
+      "YARN_VERSION=1.22.22",
+      "PORT=8000",
+      "NODE_ENV=production",
+      "BUILT_ASSETS_DIR=/app/built-assets"
+    ],
+    "Cmd": [
+      "/bench/origin.sh"
+    ],
+    "Image": "sha256:7b7c0f2074ba7d7a0616f9478e02123bb82e2169853ff4ebb557a48d93b4f416",
+    "Volumes": null,
+    "WorkingDir": "/bench/source",
+    "Entrypoint": [
+      "sh"
+    ],
+    "Labels": {
+      "com.docker.compose.project": "judgeyou",
+      "com.docker.compose.service": "judgeyou",
+      "com.docker.compose.version": "2.40.3"
+    }
+  },
+  "NetworkSettings": {
+    "SandboxID": "b5e9e0d1c3abeed70377aeb0a1944e3268251568d0294f4c0006f0d9a5906eec",
+    "SandboxKey": "/var/run/docker/netns/b5e9e0d1c3ab",
+    "Ports": {},
+    "Networks": {
+      "none": {
+        "IPAMConfig": null,
+        "Links": null,
+        "Aliases": null,
+        "DriverOpts": null,
+        "GwPriority": 0,
+        "NetworkID": "bc36f2adae0aa5e46257fe694b21d44502fd949ff956f62f6c6eedc143756ad3",
+        "EndpointID": "d1ed36698b8b9b9d7e234ab81c48a47475bb0de0991f9b4d93c32b92bc440db5",
+        "Gateway": "",
+        "IPAddress": "",
+        "MacAddress": "",
+        "IPPrefixLen": 0,
+        "IPv6Gateway": "",
+        "GlobalIPv6Address": "",
+        "GlobalIPv6PrefixLen": 0,
+        "DNSNames": null
+      }
+    }
+  },
+  "ImageManifestDescriptor": {
+    "mediaType": "application/vnd.oci.image.manifest.v1+json",
+    "digest": "sha256:f7164eda76dcac37bc69c8bc46e4f81f958cfe2114f450afce26fce2f2c7d17f",
+    "size": 2191,
+    "platform": {
+      "architecture": "arm64",
+      "os": "linux"
+    }
+  }
+}

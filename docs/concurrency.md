@@ -1,5 +1,9 @@
 JudgeYou concurrency investigation, 2026-10-26.
 
+The [burst and three-minute soak follow-up](concurrency-r4.md) adds process
+memory evidence and a guarded higher-memory attempt. The
+[monitoring guide](monitoring.md) describes failure and recovery alerts.
+
 The earlier five-second figure is the p95 completion time of a synthetic
 all-assets HTTP download. It is not browser rendering time, not the time spent
 in the model, and not a count of supported people. The generator and server
