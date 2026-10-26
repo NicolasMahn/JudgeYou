@@ -1,0 +1,1087 @@
+{
+  "remoteEvidence": "/tmp/judgeyou-r4-isolated-0W1TixAp",
+  "cases": [
+    {
+      "case": "burst-1000-512m",
+      "generatorExitCode": 99,
+      "started": 1000,
+      "finished": 1000,
+      "successful": 0,
+      "failed": 1000,
+      "successfulP95Ms": null,
+      "failedP95Ms": 12958.2,
+      "workflowAll": {
+        "max": 13104,
+        "p(90)": 12907,
+        "p(95)": 12958.2,
+        "p(99)": 13024.05,
+        "avg": 12148.035,
+        "min": 9026,
+        "med": 12473
+      },
+      "startsSpreadSeconds": 0.3992471694946289,
+      "httpStatuses": {
+        "200": 1939,
+        "0": 24061
+      },
+      "requestErrorCodes": {
+        "0": 1939,
+        "1220": 2225,
+        "1000": 3135,
+        "1212": 18701
+      },
+      "positiveTlsHandshakeSamples": 1000,
+      "h2": {
+        "rate": 0.07457692307692308,
+        "passes": 1939,
+        "fails": 24061
+      },
+      "droppedIterations": 0,
+      "deadlineFailures": 0,
+      "thresholds": {
+        "response_h2": {
+          "rate==1": {
+            "ok": false
+          }
+        },
+        "successful_workflow_ms": {
+          "p(95)<5000": {
+            "ok": true
+          }
+        },
+        "response_failure": {
+          "count==0": {
+            "ok": false
+          }
+        },
+        "workflow_success": {
+          "rate==1": {
+            "ok": false
+          }
+        }
+      },
+      "originBefore": {
+        "at": "2026-10-26T14:26:03.672947+00:00",
+        "container": "judgeyou-r4-0W1TixAp-origin",
+        "memoryCurrent": 32210944,
+        "memoryPeak": 41324544,
+        "memoryEvents": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0,
+          "oom_group_kill": 0,
+          "sock_throttled": 0
+        },
+        "cpu": {
+          "usage_usec": 450197,
+          "user_usec": 315437,
+          "system_usec": 134759,
+          "nice_usec": 0,
+          "core_sched.force_idle_usec": 0,
+          "nr_periods": 7,
+          "nr_throttled": 1,
+          "throttled_usec": 31208,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "processes": [
+          {
+            "pid": 1024410,
+            "comm": "sh",
+            "state": "S",
+            "utimeTicks": 1,
+            "stimeTicks": 0,
+            "startTicks": 118899815,
+            "rssBytes": 954368,
+            "vmHwmKiB": 1000
+          },
+          {
+            "pid": 1024422,
+            "comm": "node",
+            "state": "S",
+            "utimeTicks": 15,
+            "stimeTicks": 6,
+            "startTicks": 118899821,
+            "rssBytes": 75161600,
+            "vmHwmKiB": 73588
+          },
+          {
+            "pid": 1024423,
+            "comm": "caddy",
+            "state": "S",
+            "utimeTicks": 6,
+            "stimeTicks": 2,
+            "startTicks": 118899821,
+            "rssBytes": 49111040,
+            "vmHwmKiB": 48148
+          }
+        ]
+      },
+      "originAfter": {
+        "at": "2026-10-26T14:26:18.487231+00:00",
+        "container": "judgeyou-r4-0W1TixAp-origin",
+        "memoryCurrent": 0,
+        "memoryPeak": 0,
+        "memoryEvents": null,
+        "cpu": null,
+        "processes": []
+      },
+      "originCpuDelta": null,
+      "originMemoryEventsDelta": null,
+      "originCgroupDisappearedBeforeFinalRead": true,
+      "originLastReadableSample": {
+        "at": "2026-10-26T14:26:10.091894+00:00",
+        "container": "judgeyou-r4-0W1TixAp-origin",
+        "memoryCurrent": 517136384,
+        "memoryPeak": 519098368,
+        "memoryEvents": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0,
+          "oom_group_kill": 0,
+          "sock_throttled": 0
+        },
+        "cpu": {
+          "usage_usec": 5474400,
+          "user_usec": 3797727,
+          "system_usec": 1676672,
+          "nice_usec": 0,
+          "core_sched.force_idle_usec": 0,
+          "nr_periods": 69,
+          "nr_throttled": 31,
+          "throttled_usec": 1170063,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "processes": [
+          {
+            "pid": 1024410,
+            "comm": "sh",
+            "state": "S",
+            "utimeTicks": 1,
+            "stimeTicks": 0,
+            "startTicks": 118899815,
+            "rssBytes": 954368,
+            "vmHwmKiB": 1000
+          },
+          {
+            "pid": 1024422,
+            "comm": "node",
+            "state": "R",
+            "utimeTicks": 174,
+            "stimeTicks": 68,
+            "startTicks": 118899821,
+            "rssBytes": 100626432,
+            "vmHwmKiB": 100024
+          },
+          {
+            "pid": 1024423,
+            "comm": "caddy",
+            "state": "S",
+            "utimeTicks": 195,
+            "stimeTicks": 94,
+            "startTicks": 118899821,
+            "rssBytes": 296861696,
+            "vmHwmKiB": 290076
+          }
+        ]
+      },
+      "generatorSampledPeakMemory": 593383424,
+      "generatorLastMemoryEvents": null,
+      "processes": {
+        "origin:sh:1024410": {
+          "samples": 28,
+          "firstAt": "2026-10-26T14:26:04.037078+00:00",
+          "lastAt": "2026-10-26T14:26:10.091894+00:00",
+          "sampledPeakRssBytes": 954368,
+          "observedPeakVmHwmKiB": 1000,
+          "sampledCpuSecondsDelta": 0.0,
+          "firstState": "S",
+          "lastState": "S"
+        },
+        "origin:node:1024422": {
+          "samples": 28,
+          "firstAt": "2026-10-26T14:26:04.037078+00:00",
+          "lastAt": "2026-10-26T14:26:10.091894+00:00",
+          "sampledPeakRssBytes": 100691968,
+          "observedPeakVmHwmKiB": 100024,
+          "sampledCpuSecondsDelta": 2.21,
+          "firstState": "S",
+          "lastState": "R"
+        },
+        "origin:caddy:1024423": {
+          "samples": 28,
+          "firstAt": "2026-10-26T14:26:04.037078+00:00",
+          "lastAt": "2026-10-26T14:26:10.091894+00:00",
+          "sampledPeakRssBytes": 296861696,
+          "observedPeakVmHwmKiB": 290076,
+          "sampledCpuSecondsDelta": 2.81,
+          "firstState": "S",
+          "lastState": "S"
+        },
+        "generator:k6:1024657": {
+          "samples": 63,
+          "firstAt": "2026-10-26T14:26:04.037353+00:00",
+          "lastAt": "2026-10-26T14:26:17.861791+00:00",
+          "sampledPeakRssBytes": 561369088,
+          "observedPeakVmHwmKiB": 548396,
+          "sampledCpuSecondsDelta": 11.73,
+          "firstState": "R",
+          "lastState": "S"
+        }
+      },
+      "oomObservedTransitions": [],
+      "originMemoryByMinute": [
+        {
+          "minute": 1,
+          "memoryFirst": 32161792,
+          "memoryLast": 0,
+          "memoryMax": 517136384,
+          "nodeRssMax": 100691968,
+          "caddyRssMax": 296861696
+        }
+      ],
+      "workflowResponseByMinute": {
+        "0": {
+          "requests": 26000,
+          "statuses": {
+            "200": 1939,
+            "0": 24061
+          },
+          "successfulWorkflows": 0,
+          "failedWorkflows": 1000
+        }
+      }
+    },
+    {
+      "case": "burst-300-512m",
+      "generatorExitCode": 99,
+      "started": 300,
+      "finished": 300,
+      "successful": 300,
+      "failed": 0,
+      "successfulP95Ms": 8949.05,
+      "failedP95Ms": null,
+      "workflowAll": {
+        "min": 7375,
+        "med": 8824,
+        "max": 9002,
+        "p(90)": 8933.1,
+        "p(95)": 8949.05,
+        "p(99)": 8979.03,
+        "avg": 8711.486666666666
+      },
+      "startsSpreadSeconds": 0.12776803970336914,
+      "httpStatuses": {
+        "200": 7800
+      },
+      "requestErrorCodes": {
+        "0": 7800
+      },
+      "positiveTlsHandshakeSamples": 300,
+      "h2": {
+        "rate": 1,
+        "passes": 7800,
+        "fails": 0
+      },
+      "droppedIterations": 0,
+      "deadlineFailures": 0,
+      "thresholds": {
+        "workflow_success": {
+          "rate==1": {
+            "ok": true
+          }
+        },
+        "response_h2": {
+          "rate==1": {
+            "ok": true
+          }
+        },
+        "response_failure": {
+          "count==0": {
+            "ok": true
+          }
+        },
+        "successful_workflow_ms": {
+          "p(95)<5000": {
+            "ok": false
+          }
+        }
+      },
+      "originBefore": {
+        "at": "2026-10-26T14:25:52.451574+00:00",
+        "container": "judgeyou-r4-0W1TixAp-origin",
+        "memoryCurrent": 32542720,
+        "memoryPeak": 41623552,
+        "memoryEvents": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0,
+          "oom_group_kill": 0,
+          "sock_throttled": 0
+        },
+        "cpu": {
+          "usage_usec": 472835,
+          "user_usec": 315553,
+          "system_usec": 157281,
+          "nice_usec": 0,
+          "core_sched.force_idle_usec": 0,
+          "nr_periods": 7,
+          "nr_throttled": 2,
+          "throttled_usec": 139866,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "processes": [
+          {
+            "pid": 1023795,
+            "comm": "sh",
+            "state": "S",
+            "utimeTicks": 1,
+            "stimeTicks": 1,
+            "startTicks": 118898695,
+            "rssBytes": 999424,
+            "vmHwmKiB": 1040
+          },
+          {
+            "pid": 1023809,
+            "comm": "node",
+            "state": "S",
+            "utimeTicks": 14,
+            "stimeTicks": 7,
+            "startTicks": 118898700,
+            "rssBytes": 75210752,
+            "vmHwmKiB": 73612
+          },
+          {
+            "pid": 1023810,
+            "comm": "caddy",
+            "state": "S",
+            "utimeTicks": 6,
+            "stimeTicks": 2,
+            "startTicks": 118898700,
+            "rssBytes": 49831936,
+            "vmHwmKiB": 48784
+          }
+        ]
+      },
+      "originAfter": {
+        "at": "2026-10-26T14:26:02.256821+00:00",
+        "container": "judgeyou-r4-0W1TixAp-origin",
+        "memoryCurrent": 204218368,
+        "memoryPeak": 279064576,
+        "memoryEvents": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0,
+          "oom_group_kill": 0,
+          "sock_throttled": 0
+        },
+        "cpu": {
+          "usage_usec": 9302287,
+          "user_usec": 6336569,
+          "system_usec": 2965718,
+          "nice_usec": 0,
+          "core_sched.force_idle_usec": 0,
+          "nr_periods": 102,
+          "nr_throttled": 79,
+          "throttled_usec": 2828961,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "processes": [
+          {
+            "pid": 1023795,
+            "comm": "sh",
+            "state": "S",
+            "utimeTicks": 1,
+            "stimeTicks": 1,
+            "startTicks": 118898695,
+            "rssBytes": 999424,
+            "vmHwmKiB": 1040
+          },
+          {
+            "pid": 1023809,
+            "comm": "node",
+            "state": "S",
+            "utimeTicks": 290,
+            "stimeTicks": 117,
+            "startTicks": 118898700,
+            "rssBytes": 95027200,
+            "vmHwmKiB": 96036
+          },
+          {
+            "pid": 1023810,
+            "comm": "caddy",
+            "state": "S",
+            "utimeTicks": 333,
+            "stimeTicks": 173,
+            "startTicks": 118898700,
+            "rssBytes": 199647232,
+            "vmHwmKiB": 195044
+          }
+        ]
+      },
+      "originCpuDelta": {
+        "usage_usec": 8829452,
+        "user_usec": 6021016,
+        "system_usec": 2808437,
+        "nice_usec": 0,
+        "core_sched.force_idle_usec": 0,
+        "nr_periods": 95,
+        "nr_throttled": 77,
+        "throttled_usec": 2689095,
+        "nr_bursts": 0,
+        "burst_usec": 0
+      },
+      "originMemoryEventsDelta": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "originCgroupDisappearedBeforeFinalRead": false,
+      "originLastReadableSample": {
+        "at": "2026-10-26T14:26:02.036121+00:00",
+        "container": "judgeyou-r4-0W1TixAp-origin",
+        "memoryCurrent": 203956224,
+        "memoryPeak": 279064576,
+        "memoryEvents": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0,
+          "oom_group_kill": 0,
+          "sock_throttled": 0
+        },
+        "cpu": {
+          "usage_usec": 9300376,
+          "user_usec": 6334953,
+          "system_usec": 2965422,
+          "nice_usec": 0,
+          "core_sched.force_idle_usec": 0,
+          "nr_periods": 100,
+          "nr_throttled": 79,
+          "throttled_usec": 2828961,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "processes": [
+          {
+            "pid": 1023795,
+            "comm": "sh",
+            "state": "S",
+            "utimeTicks": 1,
+            "stimeTicks": 1,
+            "startTicks": 118898695,
+            "rssBytes": 999424,
+            "vmHwmKiB": 1040
+          },
+          {
+            "pid": 1023809,
+            "comm": "node",
+            "state": "S",
+            "utimeTicks": 290,
+            "stimeTicks": 117,
+            "startTicks": 118898700,
+            "rssBytes": 95027200,
+            "vmHwmKiB": 96036
+          },
+          {
+            "pid": 1023810,
+            "comm": "caddy",
+            "state": "S",
+            "utimeTicks": 333,
+            "stimeTicks": 173,
+            "startTicks": 118898700,
+            "rssBytes": 199647232,
+            "vmHwmKiB": 195044
+          }
+        ]
+      },
+      "generatorSampledPeakMemory": 258551808,
+      "generatorLastMemoryEvents": null,
+      "processes": {
+        "origin:sh:1023795": {
+          "samples": 43,
+          "firstAt": "2026-10-26T14:25:52.814021+00:00",
+          "lastAt": "2026-10-26T14:26:02.036121+00:00",
+          "sampledPeakRssBytes": 999424,
+          "observedPeakVmHwmKiB": 1040,
+          "sampledCpuSecondsDelta": 0.0,
+          "firstState": "S",
+          "lastState": "S"
+        },
+        "origin:node:1023809": {
+          "samples": 43,
+          "firstAt": "2026-10-26T14:25:52.814021+00:00",
+          "lastAt": "2026-10-26T14:26:02.036121+00:00",
+          "sampledPeakRssBytes": 97210368,
+          "observedPeakVmHwmKiB": 96036,
+          "sampledCpuSecondsDelta": 3.86,
+          "firstState": "S",
+          "lastState": "S"
+        },
+        "origin:caddy:1023810": {
+          "samples": 43,
+          "firstAt": "2026-10-26T14:25:52.814021+00:00",
+          "lastAt": "2026-10-26T14:26:02.036121+00:00",
+          "sampledPeakRssBytes": 199647232,
+          "observedPeakVmHwmKiB": 195064,
+          "sampledCpuSecondsDelta": 4.98,
+          "firstState": "S",
+          "lastState": "S"
+        },
+        "generator:k6:1023995": {
+          "samples": 42,
+          "firstAt": "2026-10-26T14:25:52.814299+00:00",
+          "lastAt": "2026-10-26T14:26:01.834883+00:00",
+          "sampledPeakRssBytes": 268496896,
+          "observedPeakVmHwmKiB": 262460,
+          "sampledCpuSecondsDelta": 4.91,
+          "firstState": "S",
+          "lastState": "S"
+        }
+      },
+      "oomObservedTransitions": [],
+      "originMemoryByMinute": [
+        {
+          "minute": 1,
+          "memoryFirst": 32489472,
+          "memoryLast": 203956224,
+          "memoryMax": 273948672,
+          "nodeRssMax": 97210368,
+          "caddyRssMax": 199647232
+        }
+      ],
+      "workflowResponseByMinute": {
+        "0": {
+          "requests": 7800,
+          "statuses": {
+            "200": 7800
+          },
+          "successfulWorkflows": 300,
+          "failedWorkflows": 0
+        }
+      }
+    },
+    {
+      "case": "soak-1000pm-512m",
+      "generatorExitCode": 0,
+      "started": 3000,
+      "finished": 3000,
+      "successful": 3000,
+      "failed": 0,
+      "successfulP95Ms": 38.0,
+      "failedP95Ms": null,
+      "workflowAll": {
+        "p(95)": 38,
+        "p(99)": 46,
+        "avg": 26.326,
+        "min": 18,
+        "med": 25,
+        "max": 78,
+        "p(90)": 35
+      },
+      "startsSpreadSeconds": 179.9378318786621,
+      "httpStatuses": {
+        "200": 78000
+      },
+      "requestErrorCodes": {
+        "0": 78000
+      },
+      "positiveTlsHandshakeSamples": 3000,
+      "h2": {
+        "rate": 1,
+        "passes": 78000,
+        "fails": 0
+      },
+      "droppedIterations": 0,
+      "deadlineFailures": 0,
+      "thresholds": {
+        "workflow_success": {
+          "rate==1": {
+            "ok": true
+          }
+        },
+        "response_h2": {
+          "rate==1": {
+            "ok": true
+          }
+        },
+        "successful_workflow_ms": {
+          "p(95)<5000": {
+            "ok": true
+          }
+        },
+        "dropped_iterations": {
+          "count==0": {
+            "ok": true
+          }
+        },
+        "response_failure": {
+          "count==0": {
+            "ok": true
+          }
+        }
+      },
+      "originBefore": {
+        "at": "2026-10-26T14:28:38.598048+00:00",
+        "container": "judgeyou-r4-0W1TixAp-origin",
+        "memoryCurrent": 32477184,
+        "memoryPeak": 41484288,
+        "memoryEvents": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0,
+          "oom_group_kill": 0,
+          "sock_throttled": 0
+        },
+        "cpu": {
+          "usage_usec": 478696,
+          "user_usec": 348965,
+          "system_usec": 129730,
+          "nice_usec": 0,
+          "core_sched.force_idle_usec": 0,
+          "nr_periods": 8,
+          "nr_throttled": 3,
+          "throttled_usec": 244939,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "processes": [
+          {
+            "pid": 1026493,
+            "comm": "sh",
+            "state": "S",
+            "utimeTicks": 1,
+            "stimeTicks": 1,
+            "startTicks": 118915304,
+            "rssBytes": 1003520,
+            "vmHwmKiB": 1044
+          },
+          {
+            "pid": 1026506,
+            "comm": "node",
+            "state": "S",
+            "utimeTicks": 16,
+            "stimeTicks": 6,
+            "startTicks": 118915310,
+            "rssBytes": 75177984,
+            "vmHwmKiB": 73580
+          },
+          {
+            "pid": 1026507,
+            "comm": "caddy",
+            "state": "S",
+            "utimeTicks": 7,
+            "stimeTicks": 1,
+            "startTicks": 118915310,
+            "rssBytes": 49307648,
+            "vmHwmKiB": 48172
+          }
+        ]
+      },
+      "originAfter": {
+        "at": "2026-10-26T14:31:39.501970+00:00",
+        "container": "judgeyou-r4-0W1TixAp-origin",
+        "memoryCurrent": 137306112,
+        "memoryPeak": 138403840,
+        "memoryEvents": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0,
+          "oom_group_kill": 0,
+          "sock_throttled": 0
+        },
+        "cpu": {
+          "usage_usec": 66757497,
+          "user_usec": 45727848,
+          "system_usec": 21029649,
+          "nice_usec": 0,
+          "core_sched.force_idle_usec": 0,
+          "nr_periods": 1816,
+          "nr_throttled": 3,
+          "throttled_usec": 244939,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "processes": [
+          {
+            "pid": 1026493,
+            "comm": "sh",
+            "state": "S",
+            "utimeTicks": 1,
+            "stimeTicks": 1,
+            "startTicks": 118915304,
+            "rssBytes": 1003520,
+            "vmHwmKiB": 1044
+          },
+          {
+            "pid": 1026506,
+            "comm": "node",
+            "state": "S",
+            "utimeTicks": 1256,
+            "stimeTicks": 521,
+            "startTicks": 118915310,
+            "rssBytes": 76877824,
+            "vmHwmKiB": 79008
+          },
+          {
+            "pid": 1026507,
+            "comm": "caddy",
+            "state": "S",
+            "utimeTicks": 3304,
+            "stimeTicks": 1576,
+            "startTicks": 118915310,
+            "rssBytes": 152518656,
+            "vmHwmKiB": 149072
+          }
+        ]
+      },
+      "originCpuDelta": {
+        "usage_usec": 66278801,
+        "user_usec": 45378883,
+        "system_usec": 20899919,
+        "nice_usec": 0,
+        "core_sched.force_idle_usec": 0,
+        "nr_periods": 1808,
+        "nr_throttled": 0,
+        "throttled_usec": 0,
+        "nr_bursts": 0,
+        "burst_usec": 0
+      },
+      "originMemoryEventsDelta": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "originCgroupDisappearedBeforeFinalRead": false,
+      "originLastReadableSample": {
+        "at": "2026-10-26T14:31:39.281887+00:00",
+        "container": "judgeyou-r4-0W1TixAp-origin",
+        "memoryCurrent": 137306112,
+        "memoryPeak": 138403840,
+        "memoryEvents": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0,
+          "oom_group_kill": 0,
+          "sock_throttled": 0
+        },
+        "cpu": {
+          "usage_usec": 66754587,
+          "user_usec": 45725792,
+          "system_usec": 21028794,
+          "nice_usec": 0,
+          "core_sched.force_idle_usec": 0,
+          "nr_periods": 1814,
+          "nr_throttled": 3,
+          "throttled_usec": 244939,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "processes": [
+          {
+            "pid": 1026493,
+            "comm": "sh",
+            "state": "S",
+            "utimeTicks": 1,
+            "stimeTicks": 1,
+            "startTicks": 118915304,
+            "rssBytes": 1003520,
+            "vmHwmKiB": 1044
+          },
+          {
+            "pid": 1026506,
+            "comm": "node",
+            "state": "S",
+            "utimeTicks": 1256,
+            "stimeTicks": 521,
+            "startTicks": 118915310,
+            "rssBytes": 76877824,
+            "vmHwmKiB": 79008
+          },
+          {
+            "pid": 1026507,
+            "comm": "caddy",
+            "state": "S",
+            "utimeTicks": 3304,
+            "stimeTicks": 1576,
+            "startTicks": 118915310,
+            "rssBytes": 152518656,
+            "vmHwmKiB": 149072
+          }
+        ]
+      },
+      "generatorSampledPeakMemory": 244183040,
+      "generatorLastMemoryEvents": null,
+      "processes": {
+        "origin:sh:1026493": {
+          "samples": 832,
+          "firstAt": "2026-10-26T14:28:38.959878+00:00",
+          "lastAt": "2026-10-26T14:31:39.281887+00:00",
+          "sampledPeakRssBytes": 1003520,
+          "observedPeakVmHwmKiB": 1044,
+          "sampledCpuSecondsDelta": 0.0,
+          "firstState": "S",
+          "lastState": "S"
+        },
+        "origin:node:1026506": {
+          "samples": 832,
+          "firstAt": "2026-10-26T14:28:38.959878+00:00",
+          "lastAt": "2026-10-26T14:31:39.281887+00:00",
+          "sampledPeakRssBytes": 76877824,
+          "observedPeakVmHwmKiB": 79008,
+          "sampledCpuSecondsDelta": 17.54,
+          "firstState": "S",
+          "lastState": "S"
+        },
+        "origin:caddy:1026507": {
+          "samples": 832,
+          "firstAt": "2026-10-26T14:28:38.959878+00:00",
+          "lastAt": "2026-10-26T14:31:39.281887+00:00",
+          "sampledPeakRssBytes": 152518656,
+          "observedPeakVmHwmKiB": 149072,
+          "sampledCpuSecondsDelta": 48.69,
+          "firstState": "S",
+          "lastState": "S"
+        },
+        "generator:k6:1026696": {
+          "samples": 830,
+          "firstAt": "2026-10-26T14:28:38.960178+00:00",
+          "lastAt": "2026-10-26T14:31:38.878530+00:00",
+          "sampledPeakRssBytes": 91308032,
+          "observedPeakVmHwmKiB": 89300,
+          "sampledCpuSecondsDelta": 55.51,
+          "firstState": "S",
+          "lastState": "S"
+        }
+      },
+      "oomObservedTransitions": [],
+      "originMemoryByMinute": [
+        {
+          "minute": 1,
+          "memoryFirst": 32886784,
+          "memoryLast": 123895808,
+          "memoryMax": 123895808,
+          "nodeRssMax": 76795904,
+          "caddyRssMax": 139018240
+        },
+        {
+          "minute": 2,
+          "memoryFirst": 123834368,
+          "memoryLast": 137093120,
+          "memoryMax": 137355264,
+          "nodeRssMax": 76750848,
+          "caddyRssMax": 152125440
+        },
+        {
+          "minute": 3,
+          "memoryFirst": 136724480,
+          "memoryLast": 137330688,
+          "memoryMax": 138125312,
+          "nodeRssMax": 76877824,
+          "caddyRssMax": 152518656
+        }
+      ],
+      "workflowResponseByMinute": {
+        "0": {
+          "requests": 26000,
+          "statuses": {
+            "200": 26000
+          },
+          "successfulWorkflows": 1000,
+          "failedWorkflows": 0
+        },
+        "1": {
+          "requests": 26000,
+          "statuses": {
+            "200": 26000
+          },
+          "successfulWorkflows": 1000,
+          "failedWorkflows": 0
+        },
+        "2": {
+          "requests": 26000,
+          "statuses": {
+            "200": 26000
+          },
+          "successfulWorkflows": 1000,
+          "failedWorkflows": 0
+        }
+      }
+    }
+  ],
+  "rawStreams": [
+    {
+      "name": "burst-1000-512m.raw.jsonl",
+      "bytes": 62099893,
+      "sha256": "93a1444262e27b7605bc73ab25d7d8f7e76995be39f944236432626c16ccc78a"
+    },
+    {
+      "name": "burst-300-512m.raw.jsonl",
+      "bytes": 18622776,
+      "sha256": "d0c5a4b53977a76e77722f109adde33ffd619882795eeadb6163d884acca9f90"
+    },
+    {
+      "name": "soak-1000pm-512m.raw.jsonl",
+      "bytes": 185683643,
+      "sha256": "f89e4ad567242c2c029a95e7cffdefef80e6507e9af5476f6753c38a6eaf799a"
+    },
+    {
+      "name": "burst-1000-1g.raw.jsonl",
+      "bytes": 6723264,
+      "sha256": "d3b2777edd1eed4f2da4f3c746242e889c6fcaf05d6caf099663ba78ec7b003e"
+    }
+  ],
+  "incompleteCases": [
+    {
+      "case": "burst-1000-1g",
+      "reason": "Host MemAvailable guard <=1 GiB; containers forcibly removed before completion; no valid capacity result",
+      "rawStreamCountsLowerBounds": {
+        "workflows_started": 1000,
+        "workflow_requests": 2542
+      },
+      "rawStreamHttpStatusesLowerBounds": {
+        "200": 2542
+      },
+      "rawStreamRequestErrorsLowerBounds": {
+        "0": 2542
+      },
+      "invalidTrailingJsonLines": 0,
+      "sampledContainerPeaks": {
+        "judgeyou-r4-0W1TixAp-origin": 827981824,
+        "judgeyou-r4-0W1TixAp-gen": 549134336
+      },
+      "sampledProcessRssPeaks": {
+        "sh": 954368,
+        "node": 123977728,
+        "caddy": 503848960,
+        "k6": 568430592
+      },
+      "lastSamples": [
+        {
+          "at": "2026-10-26T14:26:30.144844+00:00",
+          "container": "judgeyou-r4-0W1TixAp-origin",
+          "memoryCurrent": 827973632,
+          "memoryPeak": 827981824,
+          "memoryEvents": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0,
+            "sock_throttled": 0
+          },
+          "cpu": {
+            "usage_usec": 8980384,
+            "user_usec": 6032518,
+            "system_usec": 2947865,
+            "nice_usec": 0,
+            "core_sched.force_idle_usec": 0,
+            "nr_periods": 106,
+            "nr_throttled": 62,
+            "throttled_usec": 2765603,
+            "nr_bursts": 0,
+            "burst_usec": 0
+          },
+          "processes": [
+            {
+              "pid": 1025144,
+              "comm": "sh",
+              "state": "S",
+              "utimeTicks": 1,
+              "stimeTicks": 0,
+              "startTicks": 118901462,
+              "rssBytes": 954368,
+              "vmHwmKiB": 1000
+            },
+            {
+              "pid": 1025157,
+              "comm": "node",
+              "state": "S",
+              "utimeTicks": 268,
+              "stimeTicks": 117,
+              "startTicks": 118901466,
+              "rssBytes": 123977728,
+              "vmHwmKiB": 121160
+            },
+            {
+              "pid": 1025158,
+              "comm": "caddy",
+              "state": "S",
+              "utimeTicks": 326,
+              "stimeTicks": 171,
+              "startTicks": 118901466,
+              "rssBytes": 503848960,
+              "vmHwmKiB": 492232
+            }
+          ]
+        },
+        {
+          "at": "2026-10-26T14:26:30.145114+00:00",
+          "container": "judgeyou-r4-0W1TixAp-gen",
+          "memoryCurrent": 549126144,
+          "memoryPeak": 549134336,
+          "memoryEvents": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0,
+            "sock_throttled": 0
+          },
+          "cpu": {
+            "usage_usec": 5767964,
+            "user_usec": 4254973,
+            "system_usec": 1512991,
+            "nice_usec": 0,
+            "core_sched.force_idle_usec": 0,
+            "nr_periods": 99,
+            "nr_throttled": 19,
+            "throttled_usec": 1019733,
+            "nr_bursts": 0,
+            "burst_usec": 0
+          },
+          "processes": [
+            {
+              "pid": 1025345,
+              "comm": "k6",
+              "state": "S",
+              "utimeTicks": 425,
+              "stimeTicks": 151,
+              "startTicks": 118901552,
+              "rssBytes": 568430592,
+              "vmHwmKiB": 555396
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

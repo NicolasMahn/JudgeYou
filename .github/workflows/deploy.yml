@@ -20,6 +20,7 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm test
+      - run: npm run test:monitor
 
   # Build assets on the server, then keep build dependencies out of the runtime image.
   deploy:

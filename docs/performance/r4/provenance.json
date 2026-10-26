@@ -1,0 +1,39 @@
+{
+  "startedAt": "2026-10-26T14:25:51.447172+00:00",
+  "sourceCommit": "d05c8b7",
+  "image": "sha256:7b7c0f2074ba7d7a0616f9478e02123bb82e2169853ff4ebb557a48d93b4f416",
+  "originCpu": 1,
+  "generatorCpu": 1,
+  "generatorMemoryBytes": 1073741824,
+  "hostGuardAvailableBytes": 1073741824,
+  "deadlineSeconds": 360,
+  "processSampleSeconds": 0.2,
+  "healthCheckSeconds": 5,
+  "procClockTicksPerSecond": 100,
+  "originNetwork": "none",
+  "generatorNetwork": "container:origin",
+  "publishedPorts": [],
+  "baselineProduction": [
+    {
+      "name": "judgeyou",
+      "running": true,
+      "health": null,
+      "restartCount": 0,
+      "id": "5d331311a1b2f84ff3ad57918dfaed4142fdbaf3133bee03d351cbb2918c89df"
+    },
+    {
+      "name": "av-stuttgart-caddy",
+      "running": true,
+      "health": null,
+      "restartCount": 0,
+      "id": "5a31633f7ae191827bee532f367d435c44bc03742c53842cb917d3dcc9d9afa0"
+    },
+    {
+      "name": "av-stuttgart-app",
+      "running": true,
+      "health": "healthy",
+      "restartCount": 0,
+      "id": "efa6b8ceca5c8ce13be740ac8f5644a045e25e6277cd7566c39050024ad0d486"
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "date": "2026-10-26",
+  "applicationCommit": "d05c8b7",
+  "harnessCommit": "ec868e5",
+  "harnessSha256": "04ed0922762af1a8212cc2acdf047a71854d9bf47c93d120ca0129faee0ae29f",
+  "image": "sha256:7b7c0f2074ba7d7a0616f9478e02123bb82e2169853ff4ebb557a48d93b4f416",
+  "node": "22.23.4",
+  "host": "Existing Hetzner ARM64 host, 2 vCPU, about 4 GB; no new host",
+  "mainCases": {
+    "combinedCpu": 1,
+    "combinedMemoryBytes": 536870912,
+    "swapBytes": 0,
+    "network": "Docker network none; loopback only; fake API preflight; no production data or credentials"
+  },
+  "isolatedCpuDiagnostic": {
+    "originCpu": 1,
+    "generatorCpu": 1,
+    "memoryBytesEach": 536870912,
+    "network": "Both containers share an otherwise isolated network namespace; loopback only",
+    "warning": "Larger total resource budget, not a same-budget speedup or deployed improvement"
+  },
+  "actualSettings": {
+    "decisions": {
+      "perIpPerHour": 20,
+      "perDay": 1000,
+      "maxConcurrent": 32
+    },
+    "screenshots": {
+      "perIpPerHour": 20,
+      "perDay": 1000,
+      "maxConcurrent": 4
+    },
+    "timeoutMs": 30000
+  },
+  "productionTimingSample": {
+    "count": 21,
+    "meanMs": 429,
+    "p50Ms": 411,
+    "p95Ms": 684,
+    "rangeMs": [
+      242,
+      694
+    ],
+    "scope": "Read-only numeric upstream round-trip fields; no concurrency proof or paid API load"
+  },
+  "runOrder": [
+    "high-shared",
+    "high-split",
+    "ramp-1000",
+    "model-burst",
+    "model-paced",
+    "model-paced-slow",
+    "isolated-cpu"
+  ],
+  "probeCaution": "Server response percentiles aggregate readiness/priming/warmup/measurement/drain and include close events. Do not use them as successful measured-phase delivery latency."
+}

@@ -1,0 +1,33 @@
+{
+  "at": "2026-10-26T14:35:12.913518+00:00",
+  "ownedContainersRemaining": "",
+  "production": [
+    {
+      "name": "judgeyou",
+      "id": "5d331311a1b2f84ff3ad57918dfaed4142fdbaf3133bee03d351cbb2918c89df",
+      "running": true,
+      "health": null,
+      "restarts": 0
+    },
+    {
+      "name": "av-stuttgart-caddy",
+      "id": "5a31633f7ae191827bee532f367d435c44bc03742c53842cb917d3dcc9d9afa0",
+      "running": true,
+      "health": null,
+      "restarts": 0
+    },
+    {
+      "name": "av-stuttgart-app",
+      "id": "efa6b8ceca5c8ce13be740ac8f5644a045e25e6277cd7566c39050024ad0d486",
+      "running": true,
+      "health": "healthy",
+      "restarts": 0
+    }
+  ],
+  "http": {
+    "judge-you.de": "200",
+    "acvi-stuttgart.de": "200"
+  },
+  "memory": "total        used        free      shared  buff/cache   available\nMem:            3796        1430        1403         659        1808        2366\nSwap:              0           0           0",
+  "sourceHashes": "d383de7998d70b020f62809f356f657fd9f9fed3693cb5b4b32d1feb57d66e61  /tmp/judgeyou-r4-isolated-0W1TixAp/source/server/server.js\n00e9e4a0cd186e85f10fb4da67d627d2d1d4ac37f7e4d9541f5aceea1df975b6  /tmp/judgeyou-r4-isolated-0W1TixAp/source/server/static.js\n417713c6f67ccb4e33a34fbb81d1b153002ced4732d0a1c4a632f6c688e5c7e8  /tmp/judgeyou-r4-isolated-0W1TixAp/source/dist/build-manifest.json"
+}

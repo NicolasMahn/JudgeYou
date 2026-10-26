@@ -1,0 +1,18 @@
+{
+  "localEvidenceDirectory": "/tmp/judgeyou-h2-evidence-shq0zAWF",
+  "reason": "Large per-request streams are retained as local evidence; compact summaries and samples are committed. The contaminated paced attempt is excluded from reported results.",
+  "streams": {
+    "burst.raw.jsonl": {
+      "bytes": 57285839,
+      "sha256": "d265fd007d3bbe5eb9a72f688313ec006aabaf9d21611a8d99cd76ef696d4f5d"
+    },
+    "paced.raw.jsonl": {
+      "bytes": 57197171,
+      "sha256": "9a81458c272b1f4c1fc69daf5f6b8b514e3995348e9dd315850f36f5b510c160"
+    },
+    "paced-contaminated.raw.jsonl": {
+      "bytes": 22090458,
+      "sha256": "0e8bf97684e9492875cdb1cc93b735b9c4f1fbb448263920e89ca125df66b46b"
+    }
+  }
+}

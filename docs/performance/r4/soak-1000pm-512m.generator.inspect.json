@@ -1,0 +1,216 @@
+{
+  "Id": "7dee82d006d345335feab54baddc1745de07126998ed4616703ffe5c37a273c5",
+  "Created": "2026-10-26T14:28:38.639053083Z",
+  "Path": "/bench/k6-v1.3.0-linux-arm64/k6",
+  "Args": [
+    "run",
+    "--quiet",
+    "--address",
+    "127.0.0.1:6565",
+    "--out",
+    "json=/bench/soak-1000pm-512m.raw.jsonl",
+    "/bench/load.js"
+  ],
+  "State": {
+    "Status": "running",
+    "Running": true,
+    "Paused": false,
+    "Restarting": false,
+    "OOMKilled": false,
+    "Dead": false,
+    "Pid": 1026696,
+    "ExitCode": 0,
+    "Error": "",
+    "StartedAt": "2026-10-26T14:28:38.679191619Z",
+    "FinishedAt": "0001-01-01T00:00:00Z"
+  },
+  "Image": "sha256:7b7c0f2074ba7d7a0616f9478e02123bb82e2169853ff4ebb557a48d93b4f416",
+  "ResolvConfPath": "/var/lib/docker/containers/b0f8e6e88ff80b705d42aec4b1b107f0d1a0d2fee8aa18661bfabcb794e59acb/resolv.conf",
+  "HostnamePath": "/var/lib/docker/containers/b0f8e6e88ff80b705d42aec4b1b107f0d1a0d2fee8aa18661bfabcb794e59acb/hostname",
+  "HostsPath": "/var/lib/docker/containers/b0f8e6e88ff80b705d42aec4b1b107f0d1a0d2fee8aa18661bfabcb794e59acb/hosts",
+  "LogPath": "/var/lib/docker/containers/7dee82d006d345335feab54baddc1745de07126998ed4616703ffe5c37a273c5/7dee82d006d345335feab54baddc1745de07126998ed4616703ffe5c37a273c5-json.log",
+  "Name": "/judgeyou-r4-0W1TixAp-gen",
+  "RestartCount": 0,
+  "Driver": "overlayfs",
+  "Platform": "linux",
+  "MountLabel": "",
+  "ProcessLabel": "",
+  "AppArmorProfile": "docker-default",
+  "ExecIDs": null,
+  "HostConfig": {
+    "Binds": [
+      "/tmp/judgeyou-r4-isolated-0W1TixAp:/bench"
+    ],
+    "ContainerIDFile": "",
+    "LogConfig": {
+      "Type": "json-file",
+      "Config": {}
+    },
+    "NetworkMode": "container:b0f8e6e88ff80b705d42aec4b1b107f0d1a0d2fee8aa18661bfabcb794e59acb",
+    "PortBindings": {},
+    "RestartPolicy": {
+      "Name": "no",
+      "MaximumRetryCount": 0
+    },
+    "AutoRemove": false,
+    "VolumeDriver": "",
+    "VolumesFrom": null,
+    "ConsoleSize": [
+      0,
+      0
+    ],
+    "CapAdd": null,
+    "CapDrop": null,
+    "CgroupnsMode": "private",
+    "Dns": null,
+    "DnsOptions": [],
+    "DnsSearch": [],
+    "ExtraHosts": null,
+    "GroupAdd": null,
+    "IpcMode": "private",
+    "Cgroup": "",
+    "Links": null,
+    "OomScoreAdj": 0,
+    "PidMode": "",
+    "Privileged": false,
+    "PublishAllPorts": false,
+    "ReadonlyRootfs": false,
+    "SecurityOpt": null,
+    "UTSMode": "",
+    "UsernsMode": "",
+    "ShmSize": 67108864,
+    "Runtime": "runc",
+    "Isolation": "",
+    "CpuShares": 0,
+    "Memory": 1073741824,
+    "NanoCpus": 1000000000,
+    "CgroupParent": "",
+    "BlkioWeight": 0,
+    "BlkioWeightDevice": [],
+    "BlkioDeviceReadBps": [],
+    "BlkioDeviceWriteBps": [],
+    "BlkioDeviceReadIOps": [],
+    "BlkioDeviceWriteIOps": [],
+    "CpuPeriod": 0,
+    "CpuQuota": 0,
+    "CpuRealtimePeriod": 0,
+    "CpuRealtimeRuntime": 0,
+    "CpusetCpus": "",
+    "CpusetMems": "",
+    "Devices": [],
+    "DeviceCgroupRules": null,
+    "DeviceRequests": null,
+    "MemoryReservation": 0,
+    "MemorySwap": 1073741824,
+    "MemorySwappiness": null,
+    "OomKillDisable": null,
+    "PidsLimit": 256,
+    "Ulimits": [],
+    "CpuCount": 0,
+    "CpuPercent": 0,
+    "IOMaximumIOps": 0,
+    "IOMaximumBandwidth": 0,
+    "MaskedPaths": [
+      "/proc/acpi",
+      "/proc/asound",
+      "/proc/interrupts",
+      "/proc/kcore",
+      "/proc/keys",
+      "/proc/latency_stats",
+      "/proc/sched_debug",
+      "/proc/scsi",
+      "/proc/timer_list",
+      "/proc/timer_stats",
+      "/sys/devices/virtual/powercap",
+      "/sys/firmware"
+    ],
+    "ReadonlyPaths": [
+      "/proc/bus",
+      "/proc/fs",
+      "/proc/irq",
+      "/proc/sys",
+      "/proc/sysrq-trigger"
+    ]
+  },
+  "Storage": {
+    "RootFS": {
+      "Snapshot": {
+        "Name": "overlayfs"
+      }
+    }
+  },
+  "Mounts": [
+    {
+      "Type": "bind",
+      "Source": "/tmp/judgeyou-r4-isolated-0W1TixAp",
+      "Destination": "/bench",
+      "Mode": "",
+      "RW": true,
+      "Propagation": "rprivate"
+    }
+  ],
+  "Config": {
+    "Hostname": "b0f8e6e88ff8",
+    "Domainname": "",
+    "User": "0:0",
+    "AttachStdin": false,
+    "AttachStdout": false,
+    "AttachStderr": false,
+    "ExposedPorts": {
+      "8000/tcp": {}
+    },
+    "Tty": false,
+    "OpenStdin": false,
+    "StdinOnce": false,
+    "Env": [
+      "GOMEMLIMIT=850MiB",
+      "CASE=paced",
+      "COUNT=1000",
+      "NAME=soak-1000pm-512m",
+      "DURATION=180s",
+      "K6_NO_USAGE_REPORT=true",
+      "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+      "NODE_VERSION=22.23.4",
+      "YARN_VERSION=1.22.22",
+      "PORT=8000",
+      "NODE_ENV=production",
+      "PUBLIC_DIR=/app/dist",
+      "BUILT_ASSETS_DIR=/app/built-assets"
+    ],
+    "Cmd": [
+      "run",
+      "--quiet",
+      "--address",
+      "127.0.0.1:6565",
+      "--out",
+      "json=/bench/soak-1000pm-512m.raw.jsonl",
+      "/bench/load.js"
+    ],
+    "Image": "sha256:7b7c0f2074ba7d7a0616f9478e02123bb82e2169853ff4ebb557a48d93b4f416",
+    "Volumes": null,
+    "WorkingDir": "/bench",
+    "Entrypoint": [
+      "/bench/k6-v1.3.0-linux-arm64/k6"
+    ],
+    "Labels": {
+      "com.docker.compose.project": "judgeyou",
+      "com.docker.compose.service": "judgeyou",
+      "com.docker.compose.version": "2.40.3"
+    }
+  },
+  "NetworkSettings": {
+    "SandboxID": "",
+    "SandboxKey": "",
+    "Ports": {},
+    "Networks": {}
+  },
+  "ImageManifestDescriptor": {
+    "mediaType": "application/vnd.oci.image.manifest.v1+json",
+    "digest": "sha256:f7164eda76dcac37bc69c8bc46e4f81f958cfe2114f450afce26fce2f2c7d17f",
+    "size": 2191,
+    "platform": {
+      "architecture": "arm64",
+      "os": "linux"
+    }
+  }
+}

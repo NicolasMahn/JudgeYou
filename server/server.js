@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { createJournal } from './journal.js';
 import { createCapacity, createLimiter } from './limits.js';
 import { createSettings } from './settings.js';
+import { createTelemetry } from './telemetry.js';
 import { adminAuthorized, serveAdmin } from './admin.js';
 import { serveFile } from './static.js';
 import { prepareAssets } from './assets.js';
@@ -28,6 +29,7 @@ export function createApp({
   origins = (process.env.ALLOWED_ORIGINS ?? '').split(',').filter(Boolean),
   settings = createSettings(),
   adminToken = process.env.ADMIN_TOKEN,
+  telemetry = createTelemetry(),
   limiter = createLimiter({ limits: () => settings.get().decisions }),
   screenshotLimiter = createLimiter({ limits: () => settings.get().screenshots }),
   journal = null,
@@ -52,6 +54,7 @@ export function createApp({
   async function withCapacity(req, res, kind, operation) {
     const release = capacity[kind].acquire();
     if (!release) {
+      telemetry.mark(res, 'busy503');
       req.resume();
       res.setHeader('Retry-After', '2');
       return fail(res, 503, 'JudgeYou is busy. Please try again shortly.');
@@ -69,6 +72,7 @@ export function createApp({
       await Promise.race([operation(controller.signal), aborted]);
     } catch (error) {
       if (timedOut) {
+        telemetry.mark(res, 'timeouts504');
         req.resume();
         fail(res, 504, 'The model took too long. Please try again.');
       } else if (!controller.signal.aborted) {
@@ -107,9 +111,13 @@ export function createApp({
       text = await answer.text();
     } catch {
       signal.throwIfAborted();
+      telemetry.mark(res, 'upstreamFailures');
       return fail(res, 502, 'OpenRouter could not be reached.');
     }
     signal.throwIfAborted();
+
+    if (status >= 400) telemetry.mark(res, 'upstreamFailures');
+    if (status >= 500 && status < 600) telemetry.mark(res, 'upstream5xx');
 
     const written = journal?.write({
       ip: clientIp(req),
@@ -151,6 +159,8 @@ export function createApp({
       res.end(JSON.stringify({ text }));
     } catch (error) {
       signal.throwIfAborted();
+      telemetry.mark(res, 'upstreamFailures');
+      if ((error.status ?? 502) >= 500) telemetry.mark(res, 'upstream5xx');
       if (!(error instanceof TranscribeError)) console.error('Could not read screenshots:', error);
       fail(res, error.status ?? 502, error instanceof TranscribeError ? error.message : 'OpenRouter could not be reached.');
     }
@@ -169,16 +179,30 @@ export function createApp({
   function withinLimit(limiter, req, res) {
     const refusal = limiter.take(clientIp(req));
     if (!refusal) return true;
+    telemetry.mark(res, 'quota429');
     res.setHeader('Retry-After', String(refusal.retryAfter));
     fail(res, 429, refusal.reason);
     return false;
   }
 
-  async function admin(req, res) {
+  const usage = () => ({
+    decisions: { ...limiter.snapshot(), ...capacity.decisions.snapshot() },
+    screenshots: { ...screenshotLimiter.snapshot(), ...capacity.screenshots.snapshot() },
+  });
+
+  async function admin(req, res, health = false) {
     res.setHeader('Cache-Control', 'no-store');
     res.setHeader('X-Robots-Tag', 'noindex, nofollow');
     if (!adminToken) return fail(res, 404, 'Not found.');
     if (!adminAuthorized(req, adminToken)) return fail(res, 401, 'Admin token required.');
+    if (health) {
+      if (req.method !== 'GET') {
+        res.setHeader('Allow', 'GET');
+        return fail(res, 405, 'Use GET.');
+      }
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ ...telemetry.snapshot(), usage: usage() }));
+    }
     if (req.method === 'PUT') {
       if (!origins.includes(req.headers.origin)) return fail(res, 403, 'Requests must come from the JudgeYou page.');
       const value = await readJson(req, res, 4096);
@@ -195,18 +219,17 @@ export function createApp({
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
       settings: settings.get(),
-      usage: {
-        decisions: { ...limiter.snapshot(), ...capacity.decisions.snapshot() },
-        screenshots: { ...screenshotLimiter.snapshot(), ...capacity.screenshots.snapshot() },
-      },
+      usage: usage(),
     }));
   }
 
   return createServer(async (req, res) => {
+    telemetry.observe(req, res);
     // A disconnect can emit an error after a timed-out body reader detaches.
     req.on('error', () => {});
     try {
       const path = new URL(req.url, 'http://localhost').pathname;
+      if (path === '/api/admin/health') return await admin(req, res, true);
       if (path === '/api/admin/settings') return await admin(req, res);
       if (path === '/admin' || path === '/admin/') {
         if (!adminToken) return fail(res, 404, 'Not found.');

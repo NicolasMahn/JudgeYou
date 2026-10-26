@@ -1,0 +1,11 @@
+[Unit]
+Description=Check JudgeYou once per minute
+
+[Timer]
+OnBootSec=2m
+OnUnitActiveSec=60s
+AccuracySec=1s
+Unit=judgeyou-monitor.service
+
+[Install]
+WantedBy=timers.target

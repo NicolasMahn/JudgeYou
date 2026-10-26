@@ -1,0 +1,13 @@
+{
+ admin off
+ auto_https disable_redirects
+ skip_install_trust
+ servers {
+  protocols h1 h2
+ }
+}
+https://localhost:8443 {
+ bind 127.0.0.1
+ tls internal
+ reverse_proxy 127.0.0.1:8500
+}

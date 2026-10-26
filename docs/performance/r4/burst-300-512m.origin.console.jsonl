@@ -1,0 +1,37 @@
+{"type":"server-ready","at":"2026-10-26T14:25:52.031Z","pid":8,"node":"v22.23.4"}
+{"type":"server-sample","at":"2026-10-26T14:25:53.023Z","requests":26,"active":0,"openConnections":6,"rssBytes":75210752,"cpuMs":88.327,"loopP95Ms":11.263999,"loopMaxMs":13.852671}
+{"type":"server-sample","at":"2026-10-26T14:25:54.022Z","requests":661,"active":0,"openConnections":630,"rssBytes":81088512,"cpuMs":415.123,"loopP95Ms":18.022399,"loopMaxMs":40.566783}
+{"type":"server-sample","at":"2026-10-26T14:25:55.037Z","requests":1454,"active":0,"openConnections":1541,"rssBytes":86847488,"cpuMs":545.627,"loopP95Ms":49.315839,"loopMaxMs":77.070335}
+{"type":"server-sample","at":"2026-10-26T14:25:56.053Z","requests":2438,"active":0,"openConnections":1416,"rssBytes":93384704,"cpuMs":524.547,"loopP95Ms":53.411839,"loopMaxMs":137.494527}
+{"type":"server-sample","at":"2026-10-26T14:25:57.050Z","requests":3112,"active":0,"openConnections":1138,"rssBytes":92905472,"cpuMs":438.438,"loopP95Ms":40.730623,"loopMaxMs":90.046463}
+{"type":"server-sample","at":"2026-10-26T14:25:58.053Z","requests":4228,"active":0,"openConnections":1654,"rssBytes":95293440,"cpuMs":466.299,"loopP95Ms":35.389439,"loopMaxMs":100.663295}
+{"type":"server-sample","at":"2026-10-26T14:25:59.055Z","requests":5342,"active":0,"openConnections":1132,"rssBytes":95391744,"cpuMs":400.977,"loopP95Ms":31.113215,"loopMaxMs":61.374463}
+{"type":"server-sample","at":"2026-10-26T14:26:00.056Z","requests":6360,"active":0,"openConnections":1105,"rssBytes":96018432,"cpuMs":449.889,"loopP95Ms":42.696703,"loopMaxMs":154.402815}
+{"type":"server-sample","at":"2026-10-26T14:26:01.056Z","requests":7344,"active":0,"openConnections":1082,"rssBytes":95604736,"cpuMs":332.693,"loopP95Ms":27.918335,"loopMaxMs":35.291135}
+{"type":"server-sample","at":"2026-10-26T14:26:02.056Z","requests":7826,"active":0,"openConnections":32,"rssBytes":95027200,"cpuMs":274.768,"loopP95Ms":21.512191,"loopMaxMs":71.368703}
+{"type":"server-complete","at":"2026-10-26T14:26:02.369Z","elapsedMs":10347.742312,"requests":7826,"completed":7826,"active":0,"peakActive":6,"connections":5293,"openConnections":32,"peakConnections":1730,"apiAttempts":0,"statuses":{"200":7826},"serverResponseMs":{"p50":0.2,"p95":1.2,"max":38.08718900000008},"process":{"cpuUserMs":2908.277,"cpuSystemMs":1172.559,"peakRssKiB":96036},"tcpDelta":{"ListenOverflows":0,"ListenDrops":0,"TCPTimeouts":0}}
+{"level":"info","ts":1793024751.8495977,"msg":"maxprocs: Updating GOMAXPROCS=1: determined from CPU quota"}
+{"level":"info","ts":1793024751.8496535,"msg":"GOMEMLIMIT is updated","GOMEMLIMIT":483183820,"previous":9223372036854775807}
+{"level":"info","ts":1793024751.849658,"msg":"using config from file","file":"/bench/Caddyfile"}
+{"level":"info","ts":1793024751.8496609,"msg":"adapted config to JSON","adapter":"caddyfile"}
+{"level":"warn","ts":1793024751.8496633,"msg":"Caddyfile input is not formatted; run 'caddy fmt --overwrite' to fix inconsistencies","adapter":"caddyfile","file":"/bench/Caddyfile","line":2}
+{"level":"warn","ts":1793024751.8496683,"logger":"admin","msg":"admin endpoint disabled"}
+{"level":"info","ts":1793024751.8580894,"logger":"http.auto_https","msg":"automatic HTTP->HTTPS redirects are disabled","server_name":"srv0"}
+{"level":"info","ts":1793024751.8615983,"logger":"tls.cache.maintenance","msg":"started background certificate maintenance","cache":"0x53b750f32980"}
+{"level":"info","ts":1793024751.8617406,"logger":"pki.ca.local","msg":"root certificate trust store installation disabled; unconfigured clients may show warnings","path":"storage:pki/authorities/local/root.crt"}
+{"level":"info","ts":1793024751.8621433,"logger":"http.log","msg":"server running","name":"srv0","protocols":["h1","h2"]}
+{"level":"info","ts":1793024751.8622725,"logger":"http","msg":"enabling automatic TLS certificate management","domains":["localhost"]}
+{"level":"info","ts":1793024751.8624487,"msg":"autosaved config (load with --resume flag)","file":"/tmp/caddy-config/caddy/autosave.json"}
+{"level":"info","ts":1793024751.8625097,"msg":"serving initial configuration"}
+{"level":"info","ts":1793024751.8627996,"logger":"tls","msg":"cleaning storage unit","storage":"FileStorage:/tmp/caddy-data/caddy"}
+{"level":"info","ts":1793024751.8630407,"logger":"tls","msg":"finished cleaning storage units"}
+{"level":"info","ts":1793024751.8635373,"logger":"tls.obtain","msg":"acquiring lock","identifier":"localhost"}
+{"level":"info","ts":1793024751.8636467,"logger":"tls.obtain","msg":"lock acquired","identifier":"localhost"}
+{"level":"info","ts":1793024751.8637235,"logger":"tls.obtain","msg":"obtaining certificate","identifier":"localhost"}
+{"level":"info","ts":1793024751.92374,"logger":"tls.obtain","msg":"certificate obtained successfully","identifier":"localhost","issuer":"local"}
+{"level":"info","ts":1793024751.9238708,"logger":"tls.obtain","msg":"releasing lock","identifier":"localhost"}
+{"level":"info","ts":1793024762.3658743,"msg":"shutting down apps, then terminating","signal":"SIGTERM"}
+{"level":"warn","ts":1793024762.3659403,"msg":"exiting; byeee!! 👋","signal":"SIGTERM"}
+{"level":"info","ts":1793024762.3659546,"logger":"http","msg":"servers shutting down with eternal grace period"}
+{"level":"info","ts":1793024762.3660827,"logger":"tls.cache.maintenance","msg":"stopped background certificate maintenance","cache":"0x53b750f32980"}
+{"level":"info","ts":1793024762.3661091,"msg":"shutdown complete","signal":"SIGTERM","exit_code":0}

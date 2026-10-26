@@ -1,0 +1,4 @@
+2026-10-26T12:44:56Z
+k6 v1.3.0 (commit/5870e99ae8, go1.25.1, linux/arm64)
+v2.11.7 h1:yj0Y4fYZGPkSvibBJ1sTWE33xC0fxztVyXEW5iIdUT4=
+Linux ubuntu-4gb-hel1-2 7.0.0-30-generic #30-Ubuntu SMP PREEMPT_DYNAMIC Fri Jul 31 18:09:26 UTC 2026 aarch64 GNU/Linux

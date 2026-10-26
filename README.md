@@ -97,7 +97,14 @@ A 30-second deadline cancels stalled uploads/model responses; leaving the page
 cancels model work.
 These are capacity caps, not proven provider concurrency or a limit on people
 simply opening the page. See the [historical performance report](docs/performance.md)
-and the [R2 performance report](docs/performance-r2.md).
+the [R2 performance report](docs/performance-r2.md), and the
+[concurrency investigation](docs/concurrency.md), which distinguishes larger
+bursts, paced arrivals, model admission and load-generator limits.
+
+The [monitoring guide](docs/monitoring.md) describes the private aggregate health
+endpoint and the host failure/recovery notifier. Its SMTP or webhook destination
+must be configured and test delivery confirmed before enabling the timer.
+Alerts do not change server size or application limits automatically.
 
 Set a random `ADMIN_TOKEN` of at least 32 characters in the deployment `.env`
 to enable `/admin` (for example, generate one with `openssl rand -hex 32`).

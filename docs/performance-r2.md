@@ -1,3 +1,7 @@
+See the later [concurrency investigation](concurrency.md) for 1,000–2,000-client
+experiments, paced arrivals, and load-generator limitations. These figures are
+not browser load-time or supported-user guarantees.
+
 JudgeYou static-delivery follow-up, measured on 2026-10-26.
 
 The two-second p95 goal at 300 concurrent fresh-load clients remains unproven.

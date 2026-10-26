@@ -1,0 +1,60 @@
+{"level":"info","ts":1793018631.465618,"msg":"maxprocs: Updating GOMAXPROCS=1: determined from CPU quota"}
+{"level":"info","ts":1793018631.4657056,"msg":"GOMEMLIMIT is updated","GOMEMLIMIT":483183820,"previous":9223372036854775807}
+{"level":"info","ts":1793018631.465745,"msg":"using config from file","file":"/bench/Caddyfile"}
+{"level":"info","ts":1793018631.4657633,"msg":"adapted config to JSON","adapter":"caddyfile"}
+{"level":"warn","ts":1793018631.4657836,"msg":"Caddyfile input is not formatted; run 'caddy fmt --overwrite' to fix inconsistencies","adapter":"caddyfile","file":"/bench/Caddyfile","line":2}
+{"level":"warn","ts":1793018631.465806,"logger":"admin","msg":"admin endpoint disabled"}
+{"level":"info","ts":1793018631.4740438,"logger":"http.auto_https","msg":"automatic HTTP->HTTPS redirects are disabled","server_name":"srv0"}
+{"level":"info","ts":1793018631.492198,"logger":"http.log","msg":"server running","name":"srv0","protocols":["h1","h2"]}
+{"level":"info","ts":1793018631.4924467,"logger":"http","msg":"enabling automatic TLS certificate management","domains":["localhost"]}
+{"level":"info","ts":1793018631.4926844,"logger":"pki.ca.local","msg":"root certificate trust store installation disabled; unconfigured clients may show warnings","path":"storage:pki/authorities/local/root.crt"}
+{"level":"info","ts":1793018631.492985,"msg":"autosaved config (load with --resume flag)","file":"/tmp/caddy-config/caddy/autosave.json"}
+{"level":"info","ts":1793018631.4930549,"msg":"serving initial configuration"}
+{"level":"info","ts":1793018631.4934924,"logger":"tls.cache.maintenance","msg":"started background certificate maintenance","cache":"0xb152cd33080"}
+{"level":"info","ts":1793018631.4942727,"logger":"tls.obtain","msg":"acquiring lock","identifier":"localhost"}
+{"level":"info","ts":1793018631.4946954,"logger":"tls.obtain","msg":"lock acquired","identifier":"localhost"}
+{"level":"info","ts":1793018631.4948668,"logger":"tls.obtain","msg":"obtaining certificate","identifier":"localhost"}
+{"level":"info","ts":1793018631.5079737,"logger":"tls.obtain","msg":"certificate obtained successfully","identifier":"localhost","issuer":"local"}
+{"level":"info","ts":1793018631.5082498,"logger":"tls.obtain","msg":"releasing lock","identifier":"localhost"}
+{"level":"info","ts":1793018631.5109437,"logger":"tls","msg":"cleaning storage unit","storage":"FileStorage:/tmp/caddy-data/caddy"}
+{"level":"info","ts":1793018631.5115798,"logger":"tls","msg":"finished cleaning storage units"}
+{"type":"server-ready","at":"2026-10-26T12:43:51.628Z","pid":7,"node":"v22.23.4"}
+{"type":"server-sample","at":"2026-10-26T12:43:52.613Z","requests":26,"active":0,"openConnections":6,"rssBytes":75161600,"cpuMs":92.733,"loopP95Ms":11.821055,"loopMaxMs":21.495807}
+{"type":"server-sample","at":"2026-10-26T12:43:53.612Z","requests":26,"active":0,"openConnections":6,"rssBytes":75685888,"cpuMs":5.347,"loopP95Ms":11.132927,"loopMaxMs":20.611071}
+{"type":"server-sample","at":"2026-10-26T12:43:54.613Z","requests":32,"active":0,"openConnections":24,"rssBytes":75685888,"cpuMs":11.129,"loopP95Ms":11.157503,"loopMaxMs":15.130623}
+{"type":"server-sample","at":"2026-10-26T12:43:55.653Z","requests":667,"active":0,"openConnections":625,"rssBytes":81440768,"cpuMs":389.401,"loopP95Ms":60.850175,"loopMaxMs":131.858431}
+{"type":"server-sample","at":"2026-10-26T12:43:56.791Z","requests":1702,"active":0,"openConnections":921,"rssBytes":85725184,"cpuMs":551.016,"loopP95Ms":31.932415,"loopMaxMs":211.550207}
+{"type":"server-sample","at":"2026-10-26T12:43:57.788Z","requests":2485,"active":0,"openConnections":3101,"rssBytes":95739904,"cpuMs":532.793,"loopP95Ms":41.222143,"loopMaxMs":49.217535}
+{"type":"server-sample","at":"2026-10-26T12:43:58.790Z","requests":3261,"active":0,"openConnections":3829,"rssBytes":101761024,"cpuMs":554.53,"loopP95Ms":61.898751,"loopMaxMs":117.702655}
+{"type":"server-sample","at":"2026-10-26T12:43:59.809Z","requests":4367,"active":0,"openConnections":4289,"rssBytes":108199936,"cpuMs":411.178,"loopP95Ms":38.895615,"loopMaxMs":73.203711}
+{"type":"server-sample","at":"2026-10-26T12:44:00.809Z","requests":4367,"active":0,"openConnections":0,"rssBytes":103018496,"cpuMs":502.506,"loopP95Ms":10.878975,"loopMaxMs":48.365567}
+{"type":"server-sample","at":"2026-10-26T12:44:01.810Z","requests":4367,"active":0,"openConnections":0,"rssBytes":103018496,"cpuMs":4.622,"loopP95Ms":11.239423,"loopMaxMs":11.952127}
+{"type":"server-sample","at":"2026-10-26T12:44:02.809Z","requests":4367,"active":0,"openConnections":0,"rssBytes":103018496,"cpuMs":4.439,"loopP95Ms":11.165695,"loopMaxMs":13.869055}
+{"type":"server-sample","at":"2026-10-26T12:44:03.810Z","requests":4367,"active":0,"openConnections":0,"rssBytes":103018496,"cpuMs":4.457,"loopP95Ms":10.313727,"loopMaxMs":12.386303}
+{"type":"server-sample","at":"2026-10-26T12:44:04.810Z","requests":4367,"active":0,"openConnections":0,"rssBytes":103018496,"cpuMs":4.256,"loopP95Ms":11.206655,"loopMaxMs":17.760255}
+{"type":"server-sample","at":"2026-10-26T12:44:05.811Z","requests":4367,"active":0,"openConnections":0,"rssBytes":103018496,"cpuMs":4.169,"loopP95Ms":11.051007,"loopMaxMs":14.270463}
+{"type":"server-sample","at":"2026-10-26T12:44:06.813Z","requests":4367,"active":0,"openConnections":0,"rssBytes":103018496,"cpuMs":3.961,"loopP95Ms":11.206655,"loopMaxMs":13.705215}
+{"type":"server-sample","at":"2026-10-26T12:44:07.813Z","requests":4367,"active":0,"openConnections":0,"rssBytes":103018496,"cpuMs":4.536,"loopP95Ms":11.010047,"loopMaxMs":12.910591}
+{"type":"server-sample","at":"2026-10-26T12:44:08.814Z","requests":4367,"active":0,"openConnections":0,"rssBytes":103018496,"cpuMs":5.853,"loopP95Ms":10.395647,"loopMaxMs":11.501567}
+{"type":"server-sample","at":"2026-10-26T12:44:09.814Z","requests":4367,"active":0,"openConnections":0,"rssBytes":103018496,"cpuMs":5.571,"loopP95Ms":10.412031,"loopMaxMs":11.354111}
+{"type":"server-sample","at":"2026-10-26T12:44:10.815Z","requests":4367,"active":0,"openConnections":0,"rssBytes":103018496,"cpuMs":5.504,"loopP95Ms":10.313727,"loopMaxMs":10.805247}
+{"type":"server-sample","at":"2026-10-26T12:44:11.815Z","requests":4367,"active":0,"openConnections":0,"rssBytes":103018496,"cpuMs":5.394,"loopP95Ms":10.264575,"loopMaxMs":11.681791}
+{"type":"server-sample","at":"2026-10-26T12:44:12.815Z","requests":4367,"active":0,"openConnections":0,"rssBytes":103018496,"cpuMs":5.176,"loopP95Ms":10.231807,"loopMaxMs":10.862591}
+{"type":"server-sample","at":"2026-10-26T12:44:13.815Z","requests":4367,"active":0,"openConnections":0,"rssBytes":103018496,"cpuMs":5.241,"loopP95Ms":10.223615,"loopMaxMs":11.263999}
+{"type":"server-sample","at":"2026-10-26T12:44:14.816Z","requests":4367,"active":0,"openConnections":0,"rssBytes":103018496,"cpuMs":5.426,"loopP95Ms":10.239999,"loopMaxMs":10.387455}
+{"type":"server-sample","at":"2026-10-26T12:44:15.816Z","requests":4367,"active":0,"openConnections":0,"rssBytes":103018496,"cpuMs":5.776,"loopP95Ms":10.280959,"loopMaxMs":10.928127}
+{"type":"server-sample","at":"2026-10-26T12:44:16.815Z","requests":4367,"active":0,"openConnections":0,"rssBytes":80023552,"cpuMs":73.024,"loopP95Ms":10.731519,"loopMaxMs":23.429119}
+{"type":"server-sample","at":"2026-10-26T12:44:17.816Z","requests":4367,"active":0,"openConnections":0,"rssBytes":80023552,"cpuMs":5.601,"loopP95Ms":10.223615,"loopMaxMs":10.592255}
+{"type":"server-sample","at":"2026-10-26T12:44:18.815Z","requests":4367,"active":0,"openConnections":0,"rssBytes":80023552,"cpuMs":5.567,"loopP95Ms":10.223615,"loopMaxMs":10.534911}
+{"type":"server-sample","at":"2026-10-26T12:44:19.815Z","requests":4367,"active":0,"openConnections":0,"rssBytes":80023552,"cpuMs":5.47,"loopP95Ms":10.280959,"loopMaxMs":11.214847}
+{"type":"server-sample","at":"2026-10-26T12:44:20.816Z","requests":4367,"active":0,"openConnections":0,"rssBytes":80023552,"cpuMs":6.363,"loopP95Ms":10.362879,"loopMaxMs":13.885439}
+{"type":"server-sample","at":"2026-10-26T12:44:21.815Z","requests":4367,"active":0,"openConnections":0,"rssBytes":80023552,"cpuMs":11.897,"loopP95Ms":10.477567,"loopMaxMs":15.908863}
+{"type":"server-sample","at":"2026-10-26T12:44:22.815Z","requests":4367,"active":0,"openConnections":0,"rssBytes":80023552,"cpuMs":6.067,"loopP95Ms":10.256383,"loopMaxMs":11.444223}
+{"type":"server-sample","at":"2026-10-26T12:44:23.816Z","requests":4367,"active":0,"openConnections":0,"rssBytes":80023552,"cpuMs":5.763,"loopP95Ms":10.280959,"loopMaxMs":11.829247}
+{"type":"server-sample","at":"2026-10-26T12:44:24.816Z","requests":4367,"active":0,"openConnections":0,"rssBytes":80023552,"cpuMs":5.513,"loopP95Ms":10.305535,"loopMaxMs":10.805247}
+{"type":"server-sample","at":"2026-10-26T12:44:25.816Z","requests":4367,"active":0,"openConnections":0,"rssBytes":80023552,"cpuMs":5.933,"loopP95Ms":10.223615,"loopMaxMs":10.321919}
+{"type":"server-sample","at":"2026-10-26T12:44:26.816Z","requests":4367,"active":0,"openConnections":0,"rssBytes":80023552,"cpuMs":5.781,"loopP95Ms":10.199039,"loopMaxMs":11.509759}
+{"type":"server-sample","at":"2026-10-26T12:44:27.817Z","requests":4367,"active":0,"openConnections":0,"rssBytes":80023552,"cpuMs":5.823,"loopP95Ms":10.248191,"loopMaxMs":10.600447}
+{"type":"server-sample","at":"2026-10-26T12:44:28.817Z","requests":4367,"active":0,"openConnections":0,"rssBytes":80023552,"cpuMs":5.392,"loopP95Ms":10.248191,"loopMaxMs":10.772479}
+{"type":"server-sample","at":"2026-10-26T12:44:29.817Z","requests":4367,"active":0,"openConnections":0,"rssBytes":80023552,"cpuMs":5.539,"loopP95Ms":10.215423,"loopMaxMs":10.944511}
+{"type":"server-sample","at":"2026-10-26T12:44:30.816Z","requests":4367,"active":0,"openConnections":0,"rssBytes":80154624,"cpuMs":5.708,"loopP95Ms":11.173887,"loopMaxMs":12.591103}
