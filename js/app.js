@@ -27,6 +27,7 @@ import { SAMPLES } from './sample.js';
 import { storedAnswers } from './sample-verdicts.js';
 import { loadShared, shareLink, sharedId } from './share.js';
 import { specimenOf } from './specimen-images.js';
+import { createDraftStore } from './draft.js';
 
 const LAB_LINE_MS = 340;
 const LAB_FLICKER_MS = 110;
@@ -52,6 +53,7 @@ let typedNames = [];
 const spared = new Set();
 // Journaled with each request; the sample is never kept.
 let source = 'paste';
+let viewingSharedVerdict = Boolean(sharedId());
 // Waiting to be read, in chat order: { file, url } with url for the thumbnail.
 let screenshots = [];
 // True while screenshots are being read, before the judging starts.
@@ -62,6 +64,10 @@ let installPrompt = null;
 // Kept so a language switch can redraw the results without asking again.
 let lastVerdict = null;
 let chatChangeTimer = null;
+let parsedChat = null;
+let draftTimer = null;
+let restoringIntake = false;
+const drafts = createDraftStore();
 
 function fromTemplate(id) {
   return $(id).content.firstElementChild.cloneNode(true);
@@ -122,14 +128,68 @@ function onChatChanged() {
   chatChangeTimer = null;
   messages = parseChat(chat.value);
   detected = participantsOf(messages).map((p) => p.name);
-  spared.clear();
+  if (parsedChat !== chat.value) spared.clear();
+  parsedChat = chat.value;
   namesForm.hidden = !chat.value.trim() || !isRawMode();
   renderSubjects();
   renderScreenshots();
 }
 
+function showDraftNotice(key) {
+  const notice = $('draft-status');
+  notice.hidden = !key;
+  if (key) {
+    notice.dataset.i18n = key;
+    notice.textContent = t(key);
+  } else delete notice.dataset.i18n;
+}
+
+function saveDraft() {
+  clearTimeout(draftTimer);
+  draftTimer = null;
+  // A shared verdict must never overwrite a private draft from this tab.
+  if (restoringIntake || viewingSharedVerdict || sharedId()) return;
+  const saved = drafts.write({
+    text: chat.value,
+    names: $('names').value,
+    selectedNames: typedNames,
+    spared: chat.value === parsedChat ? [...spared] : [],
+    screenshotCount: screenshots.length,
+  });
+  if (!saved) showDraftNotice('draftUnavailable');
+  else if ($('draft-status').dataset.i18n === 'draftUnavailable') showDraftNotice(null);
+}
+
+function scheduleDraftSave() {
+  if (restoringIntake || viewingSharedVerdict || sharedId()) return;
+  clearTimeout(draftTimer);
+  draftTimer = setTimeout(saveDraft, CHAT_EDIT_DELAY_MS);
+}
+
+function restoreIntake() {
+  restoringIntake = true;
+  consent.checked = false;
+  const incoming = sharedId() || new URLSearchParams(location.search).has('shared');
+  const draft = incoming ? null : drafts.read();
+  // Prefer newer form values restored by the browser over an older saved draft.
+  const useDraft = draft && (!chat.value || chat.value === draft.text);
+  if (useDraft) {
+    chat.value = draft.text;
+    $('names').value = draft.names;
+    typedNames = draft.selectedNames;
+  }
+  onChatChanged();
+  if (useDraft) {
+    draft.spared.forEach((name) => spared.add(name));
+    renderSubjects();
+    showDraftNotice(draft.screenshotCount ? 'draftScreenshotsLost' : 'draftRestored');
+  }
+  restoringIntake = false;
+}
+
 /** Forgets the last verdict and the names typed for it, before a different chat. */
 function resetVerdict() {
+  viewingSharedVerdict = false;
   results.hidden = true;
   lastVerdict = null;
   typedNames = [];
@@ -138,6 +198,10 @@ function resetVerdict() {
 
 /** Back to an empty page: no chat, no waiting screenshots, no verdict. */
 function clearAll() {
+  clearTimeout(draftTimer);
+  drafts.clear();
+  showDraftNotice(null);
+  consent.checked = false;
   resetVerdict();
   document.body.classList.remove('is-shared');
   // A shared verdict's address would bring it back on reload.
@@ -183,6 +247,7 @@ function addFiles(files, { sort = true } = {}) {
   const room = MAX_SCREENSHOTS - screenshots.length;
   if (images.length > room) showError(t('errors.tooManyScreenshots', { n: MAX_SCREENSHOTS }));
   const added = (sort ? inTakenOrder(images) : images).slice(0, Math.max(room, 0));
+  if (added.length) viewingSharedVerdict = false;
   screenshots.push(...added.map((file) => ({ file, url: URL.createObjectURL(file) })));
   renderScreenshots();
   // The screenshots, and below them the box to tick and the button to press.
@@ -219,6 +284,7 @@ function renderScreenshots() {
   );
   updateJudgeButton();
   updateClearButton();
+  scheduleDraftSave();
 }
 
 /** A chat someone brought, as opposed to an empty box or our sample. */
@@ -349,11 +415,13 @@ function renderSubjects() {
   const unjudged = candidates().length - spared.size - subjects().length;
   if (unjudged > 0) box.append(t('spared', { n: unjudged }));
   updateJudgeButton();
+  scheduleDraftSave();
 }
 
 // Waiting screenshots are judged too: they're read first (judgeScreenshots).
 function updateJudgeButton() {
-  const chatReady = subjects().length >= 2 && (isRawMode() || messages.length >= MIN_MESSAGES_TO_JUDGE);
+  const chatReady = Boolean(chat.value.trim()) && subjects().length >= 2
+    && (isRawMode() || messages.length >= MIN_MESSAGES_TO_JUDGE);
   judgeButton.disabled = reading || judging || chatChangeTimer !== null || !(screenshots.length || chatReady);
 }
 
@@ -698,7 +766,10 @@ renderLanguagePicker();
 renderSpeciesStrip();
 
 chat.addEventListener('input', () => {
+  viewingSharedVerdict = false;
   source = 'paste';
+  showDraftNotice(null);
+  scheduleDraftSave();
   clearTimeout(chatChangeTimer);
   if (chat.value.length < LARGE_CHAT_LENGTH) return onChatChanged();
   // Coalesce edits to large exports; never judge names from the previous edit.
@@ -756,8 +827,6 @@ $('install').addEventListener('click', async () => {
 window.addEventListener('appinstalled', () => ($('install').hidden = true));
 
 navigator.serviceWorker?.register('/sw.js');
-takeSharedFiles();
-showSharedVerdict();
 
 // Each click brings the next sample; after the first, the button says so.
 let nextSample = 0;
@@ -794,3 +863,20 @@ namesForm.addEventListener('submit', (event) => {
   renderSubjects();
 });
 
+// Browsers may restore form controls after the module has run, without input
+// events. Rebuild derived state on pageshow as well as the initial render.
+restoreIntake();
+window.addEventListener('pageshow', () => {
+  consent.checked = false;
+  onChatChanged();
+});
+window.addEventListener('pagehide', () => {
+  saveDraft();
+  consent.checked = false;
+});
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') saveDraft();
+});
+$('names').addEventListener('input', scheduleDraftSave);
+takeSharedFiles();
+showSharedVerdict();

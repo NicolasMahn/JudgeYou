@@ -50,6 +50,11 @@ edited first.
 The page speaks English, German, French and Spanish, picked from the browser's
 language and switchable in the header.
 
+Unfinished chat text, manually entered names and participant selections are kept
+in this tab’s session storage so reload can restore them. “Clear” removes the
+draft. Consent resets on reload; screenshots must be added again. If the browser
+blocks draft storage, the page explains that reloading may lose the chat.
+
 ## Run locally
 
 Use Node.js 22 with `OPENROUTER_KEY` supplied through the environment.
