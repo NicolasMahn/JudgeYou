@@ -16,10 +16,12 @@ import { buildRequest } from '../js/questions.js';
 
 const HELP = `Usage: node scripts/benchmark.js [options]
   --app PATH                 createApp module (also APP_MODULE; default server/server.js)
+  --public-dir PATH          built public directory (also PUBLIC_DIR; default source root)
+  --target-url URL           separate loopback static server; page/assets scenarios only
   --duration SECONDS         admission window per scenario/level (default 2; 0.05–60)
   --warmup SECONDS           unmeasured warmup per scenario/level (default 0.25; 0–10)
   --levels 1,10,32,100,300    closed-loop clients (each 1–300)
-  --scenarios page,assets,model,screenshots
+  --scenarios page,ready,assets,model,screenshots
   --model-latency MS         deterministic fake model/transcriber delay (default 100; 0–10000)
   --decisions-cap N          injected maxConcurrent (default 32; 1–512)
   --screenshots-cap N        injected maxConcurrent (default 4; 1–64)
@@ -36,6 +38,8 @@ Example: APP_MODULE=/tmp/baseline/server/server.js node scripts/benchmark.js --j
 Output is JSON Lines. No production listener, settings, database, or key is used.
 Page = HTML then its local module/CSS/declared-font graph and 12 runtime mascots,
 six parallel assets/client. Other JavaScript-created images and lazy imports are excluded.
+Ready = HTML, startup scripts and styles only; no fonts/images. This measures
+critical-resource delivery, not browser rendering or JavaScript execution.
 Assets = conditional GETs after priming; page = fresh-browser GETs on a warm server.
 This is HTTP load in one process, not a browser engine or a count of human users.
 Screenshots use one tiny synthetic JPEG data URL; this does not measure max-size image capacity.
@@ -54,7 +58,7 @@ function options(args) {
     if (value === undefined || value.startsWith('--')) throw new Error(`Missing value for --${match[1]}`);
     values[match[1]] = value;
   }
-  const known = ['app', 'duration', 'warmup', 'levels', 'scenarios', 'model-latency', 'decisions-cap', 'screenshots-cap', 'journal', 'subjects', 'body-bytes', 'timeout', 'max-iterations', 'journal-rows'];
+  const known = ['app', 'public-dir', 'target-url', 'duration', 'warmup', 'levels', 'scenarios', 'model-latency', 'decisions-cap', 'screenshots-cap', 'journal', 'subjects', 'body-bytes', 'timeout', 'max-iterations', 'journal-rows'];
   for (const name of Object.keys(values)) if (!known.includes(name)) throw new Error(`Unknown option: --${name}`);
   const number = (name, fallback, min, max, integer = false) => {
     const value = Number(values[name] ?? fallback);
@@ -66,15 +70,21 @@ function options(args) {
   const levels = (values.levels ?? '1,10,32,100,300').split(',').map(Number);
   if (!levels.length || levels.length > 10 || levels.some((level) => !Number.isInteger(level) || level < 1 || level > 300)) throw new Error('Use 1–10 client levels, each from 1 to 300');
   const scenarios = (values.scenarios ?? 'page,assets,model,screenshots').split(',');
-  if (!scenarios.length || scenarios.length > 4 || scenarios.some((name) => !['page', 'assets', 'model', 'screenshots'].includes(name))) throw new Error('Unknown or excessive scenarios');
+  if (!scenarios.length || scenarios.length > 5 || scenarios.some((name) => !['page', 'ready', 'assets', 'model', 'screenshots'].includes(name))) throw new Error('Unknown or excessive scenarios');
   const journal = values.journal ?? 'off';
   if (!['off', 'metadata', 'sealed'].includes(journal)) throw new Error('--journal must be off, metadata, or sealed');
   const app = values.app ?? process.env.APP_MODULE ?? fileURLToPath(new URL('../server/server.js', import.meta.url));
   const appURL = app.startsWith('file:') ? new URL(app) : pathToFileURL(resolve(app));
   if (appURL.protocol !== 'file:') throw new Error('--app must be a local file');
   const subjects = number('subjects', 2, 2, 8, true);
+  const target = values['target-url'] ? new URL(values['target-url']) : null;
+  if (target && (target.protocol !== 'http:' || !['127.0.0.1', '[::1]', 'localhost'].includes(target.hostname)
+    || target.username || target.password || target.pathname !== '/' || target.search || target.hash
+    || scenarios.some((scenario) => !['page', 'ready', 'assets'].includes(scenario)))) {
+    throw new Error('--target-url must be a loopback HTTP origin, with page/ready/assets scenarios only');
+  }
   return {
-    app: fileURLToPath(appURL), levels: [...new Set(levels)], scenarios: [...new Set(scenarios)], journal,
+    app: fileURLToPath(appURL), publicDir: values['public-dir'] ?? process.env.PUBLIC_DIR ?? null, targetUrl: target?.href ?? null, levels: [...new Set(levels)], scenarios: [...new Set(scenarios)], journal,
     duration: number('duration', 2, 0.05, 60), warmup: number('warmup', 0.25, 0, 10),
     modelLatencyMs: number('model-latency', 100, 0, 10000, true),
     decisionsCap: number('decisions-cap', 32, 1, 512, true), screenshotsCap: number('screenshots-cap', 4, 1, 64, true),
@@ -112,6 +122,15 @@ function distribution(timeoutMs) {
 }
 
 async function assetGraph(root) {
+  try {
+    const manifest = JSON.parse(await readFile(join(root, 'build-manifest.json'), 'utf8'));
+    if (!Array.isArray(manifest.initialAssets) || !manifest.initialAssets.every((path) => typeof path === 'string' && path.startsWith('/assets/') || ['/favicon.ico', '/img/favicon-96.png', '/img/apple-touch-icon.png', '/manifest.webmanifest'].includes(path))) {
+      throw new Error('Invalid built asset manifest');
+    }
+    return ['/', ...manifest.initialAssets];
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+  }
   const paths = new Set(['/']);
   const queue = ['/'];
   const local = (reference, parent) => {
@@ -171,10 +190,12 @@ function decisionFixture(config) {
 
 async function run(config) {
   const fixture = decisionFixture(config);
-  const appRoot = resolve(dirname(config.app), '..');
+  const appRoot = config.publicDir ? resolve(config.publicDir) : resolve(dirname(config.app), '..');
   const assets = (await assetGraph(appRoot)).filter((path) => path !== '/');
   if (!assets.length) throw new Error('No browser assets found');
   const previousFetch = globalThis.fetch;
+  const previousPublicDir = process.env.PUBLIC_DIR;
+  if (config.publicDir) process.env.PUBLIC_DIR = appRoot;
   globalThis.fetch = () => { throw new Error('External fetch is disabled in the local capacity benchmark'); };
   let server;
   let store;
@@ -188,7 +209,7 @@ async function run(config) {
   process.once('SIGINT', interrupt);
   process.once('SIGTERM', interrupt);
   try {
-    const { createApp } = await import(pathToFileURL(config.app));
+    const { createApp, LISTEN_BACKLOG = 511 } = await import(pathToFileURL(config.app));
     let journal = null;
     if (config.journal !== 'off') {
       ({ publicKey, privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 }));
@@ -222,8 +243,9 @@ async function run(config) {
         return { text: '2026-10-25, 12:00 - Synthetic: benchmark' };
       },
     });
-    await new Promise((done, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', done); });
+    await new Promise((done, reject) => { server.once('error', reject); server.listen({ port: 0, host: '127.0.0.1', backlog: LISTEN_BACKLOG }, done); });
     const port = server.address().port;
+    const target = config.targetUrl ? new URL(config.targetUrl) : null;
     agent = new Agent({ keepAlive: true, maxSockets: 1800, maxFreeSockets: 300 });
     const etags = new Map();
     const body = fixture.body;
@@ -248,7 +270,7 @@ async function run(config) {
         }
         done({ ok, status, headers: responseHeaders });
       };
-      const req = request({ hostname: '127.0.0.1', port, path, method: payload ? 'POST' : 'GET', headers, agent, signal }, (res) => {
+      const req = request({ hostname: !payload && target ? target.hostname.replace(/^\[|\]$/g, '') : '127.0.0.1', port: !payload && target ? Number(target.port || 80) : port, path, method: payload ? 'POST' : 'GET', headers, agent, signal }, (res) => {
         let bytes = 0;
         res.on('data', (chunk) => { bytes += chunk.length; });
         res.once('error', () => finish('transport-error'));
@@ -269,9 +291,10 @@ async function run(config) {
     }
     output({ type: 'environment', at: new Date().toISOString(), config, injectedSettings,
       node: process.version, platform: platform(), release: release(), arch: process.arch, cpus: cpus().length,
+      listenBacklog: LISTEN_BACKLOG,
       availableParallelism: availableParallelism(), cpuModel: cpus()[0]?.model, memoryBytes: totalmem(), uvThreadpoolSize: process.env.UV_THREADPOOL_SIZE ?? 'Node default',
       network: 'Ephemeral 127.0.0.1 only; fake upstream/transcriber; external fetch disabled',
-      measurement: 'Closed-loop clients, not users. Server and HTTP load generator share this process. RPS includes failures and drain time. Page graph includes all declared CSS fonts and runtime mascots; other JavaScript-created images and lazy imports excluded. No JavaScript execution. Static assets primed before timing. Screenshots use one tiny synthetic JPEG data URL, not max-size images.',
+      measurement: `Closed-loop clients, not users. ${target ? 'Static target runs separately; process metrics cover the generator only. Apply the same combined container resource budget.' : 'Server and HTTP load generator share this process.'} RPS includes failures and drain time. Page graph includes all declared CSS fonts and runtime mascots; other JavaScript-created images and lazy imports excluded. No JavaScript execution. Static assets primed before timing. Screenshots use one tiny synthetic JPEG data URL, not max-size images.`,
       capacity: 'Injected settings; older apps may ignore them. Quota limiters bypassed. 503 is reported separately.',
       journalStorage: config.journal === 'off' ? 'disabled' : 'temporary SQLite WAL; generated RSA-2048 key; deleted on exit',
       decisionBytes: Buffer.byteLength(body), stateBytes: fixture.stateBytes, questionCount: fixture.questionCount, responseBytes: Buffer.byteLength(fixture.response), assetsPerPage: assets.length, assets,
@@ -297,10 +320,11 @@ async function run(config) {
             const signal = AbortSignal.timeout(config.timeoutMs);
             const measuredStats = measured ? stats : null;
             let ok = true;
-            if (scenario === 'page') {
+            if (scenario === 'page' || scenario === 'ready') {
               ok = (await issue('/', signal, measuredStats)).ok;
-              for (let i = 0; i < assets.length && !signal.aborted && !stop; i += 6) {
-                const responses = await Promise.all(assets.slice(i, i + 6).map((path) => issue(path, signal, measuredStats)));
+              const pageAssets = scenario === 'ready' ? assets.filter((path) => /\.(?:js|css)$/.test(path)) : assets;
+              for (let i = 0; i < pageAssets.length && !signal.aborted && !stop; i += 6) {
+                const responses = await Promise.all(pageAssets.slice(i, i + 6).map((path) => issue(path, signal, measuredStats)));
                 ok = responses.every((response) => response.ok) && ok;
               }
               if (signal.aborted) ok = false;
@@ -359,6 +383,8 @@ async function run(config) {
     store?.close();
     if (directory) await rm(directory, { recursive: true, force: true });
     globalThis.fetch = previousFetch;
+    if (previousPublicDir === undefined) delete process.env.PUBLIC_DIR;
+    else process.env.PUBLIC_DIR = previousPublicDir;
     process.removeListener('SIGINT', interrupt);
     process.removeListener('SIGTERM', interrupt);
   }

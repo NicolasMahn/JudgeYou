@@ -17,10 +17,11 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 22
+      - run: npm ci
+      - run: npm run build
       - run: npm test
 
-  # The server builds the image itself: it has no dependencies, so building
-  # there is quick and needs no registry.
+  # Build assets on the server, then keep build dependencies out of the runtime image.
   deploy:
     needs: test
     runs-on: ubuntu-latest

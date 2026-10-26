@@ -26,6 +26,7 @@ import {
 import { SAMPLES } from './sample.js';
 import { storedAnswers } from './sample-verdicts.js';
 import { loadShared, shareLink, sharedId } from './share.js';
+import { specimenOf } from './specimen-images.js';
 
 const LAB_LINE_MS = 340;
 const LAB_FLICKER_MS = 110;
@@ -71,7 +72,7 @@ function renderSpeciesStrip() {
     const item = document.createElement('div');
     item.className = 'species';
     const img = new Image(104, 104);
-    img.src = mascotOf(key);
+    img.src = specimenOf(key);
     img.alt = '';
     img.loading = 'lazy';
     const name = document.createElement('span');

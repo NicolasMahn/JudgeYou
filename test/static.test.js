@@ -5,13 +5,13 @@ import fs from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { gunzipSync, brotliDecompressSync } from 'node:zlib';
+import { gunzipSync, brotliDecompressSync, gzipSync, brotliCompressSync } from 'node:zlib';
 import { createHook } from 'node:async_hooks';
 
 async function start(t, { production = false } = {}) {
   const root = await fs.mkdtemp(join(tmpdir(), 'judgeyou-static-'));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
-  for (const directory of ['server', 'css', 'js', 'img', 'fonts']) await fs.mkdir(join(root, directory));
+  for (const directory of ['server', 'css', 'js', 'img', 'fonts', 'assets']) await fs.mkdir(join(root, directory));
   await fs.copyFile(new URL('../server/static.js', import.meta.url), join(root, 'server/static.mjs'));
   const content = {
     'index.html': '<html>JudgeYou</html>'.repeat(80),
@@ -29,7 +29,11 @@ async function start(t, { production = false } = {}) {
     'server/secret.txt': 'private server file',
     'js/key.js': 'private key',
     'index.html.backup': 'private backup',
+    'assets/app-ABCDEFGH.js': 'console.log("built");'.repeat(100),
+    'assets/notes.js': 'console.log("unversioned");',
   };
+  content['assets/app-ABCDEFGH.js.br'] = brotliCompressSync(content['assets/app-ABCDEFGH.js']);
+  content['assets/app-ABCDEFGH.js.gz'] = gzipSync(content['assets/app-ABCDEFGH.js'], { level: 9 });
   await Promise.all(Object.entries(content).map(([file, body]) => fs.writeFile(join(root, file), body)));
   await fs.symlink('../server/secret.txt', join(root, 'js/leak.js'));
   await fs.symlink('../server', join(root, 'js/private'));
@@ -210,4 +214,17 @@ test('production reuses asset bytes without filesystem work until the container 
   assert.equal(response.status, 200);
   assert.equal(brotliDecompressSync(response.body).toString(), content['css/style.css']);
   assert.equal((await get('/css/style.css', { 'Accept-Encoding': 'br', 'If-None-Match': response.headers.etag })).status, 304);
+});
+
+test('fingerprinted assets use immutable caching and production serves prepared compression', async (t) => {
+  const { get, content } = await start(t, { production: true });
+  for (const [encoding, extension] of [['br', 'br'], ['gzip', 'gz']]) {
+    const response = await get('/assets/app-ABCDEFGH.js', { 'Accept-Encoding': encoding });
+    assert.equal(response.status, 200);
+    assert.equal(response.headers['cache-control'], 'public, max-age=31536000, immutable');
+    assert.equal(response.headers['content-encoding'], encoding);
+    assert.deepEqual(response.body, content[`assets/app-ABCDEFGH.js.${extension}`]);
+  }
+  assert.equal((await get('/assets/notes.js')).headers['cache-control'], 'public, max-age=0, must-revalidate');
+  assert.equal((await get('/')).headers['cache-control'], 'public, max-age=0, must-revalidate');
 });

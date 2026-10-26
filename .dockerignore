@@ -4,3 +4,6 @@ js/key.js
 .github
 test
 data
+.env
+node_modules
+dist

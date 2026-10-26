@@ -1,15 +1,15 @@
 import fs from 'node:fs/promises';
 import { createHash } from 'node:crypto';
-import { join, extname, posix } from 'node:path';
+import { join, extname, posix, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { gzip, brotliCompress, constants } from 'node:zlib';
 
-const ROOT = fileURLToPath(new URL('..', import.meta.url));
+const ROOT = process.env.PUBLIC_DIR ? resolve(process.env.PUBLIC_DIR) : fileURLToPath(new URL('..', import.meta.url));
 // Production deploys replace the container, so a process sees one asset version.
 const IMMUTABLE = process.env.NODE_ENV === 'production';
 const FILES = ['index.html', 'privacy.html', 'impressum.html', 'manifest.webmanifest', 'sw.js', 'favicon.ico', 'robots.txt', 'sitemap.xml'];
-const DIRECTORIES = ['css', 'js', 'img', 'fonts'];
+const DIRECTORIES = ['css', 'js', 'img', 'fonts', 'assets'];
 const TYPES = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
@@ -69,7 +69,17 @@ async function load(file, slot) {
       const content = await fs.readFile(path);
       // A deployment may replace a file while it is being read.
       if (version(await fs.stat(path, { bigint: true })) !== current || await fs.realpath(path) !== path) continue;
-      slot.asset = { version: current, variants: new Map([['identity', Promise.resolve(representation(content))]]) };
+      const variants = new Map([['identity', Promise.resolve(representation(content))]]);
+      if (IMMUTABLE) {
+        for (const [encoding, suffix] of [['br', '.br'], ['gzip', '.gz']]) {
+          try {
+            variants.set(encoding, Promise.resolve(representation(await fs.readFile(`${path}${suffix}`))));
+          } catch (error) {
+            if (error.code !== 'ENOENT') throw error;
+          }
+        }
+      }
+      slot.asset = { version: current, variants };
       return slot.asset;
     }
     throw new Error('File is changing');
@@ -152,8 +162,8 @@ export async function serveFile(req, res, path) {
     }
     const { content, etag } = await asset.variants.get(selected);
     res.setHeader('Content-Type', TYPES[extension] ?? 'application/octet-stream');
-    // Asset names are not fingerprinted: even binary assets must eventually revalidate.
-    res.setHeader('Cache-Control', text ? 'public, max-age=0, must-revalidate' : 'public, max-age=86400');
+    const fingerprinted = /^assets\/[^/]+-[A-Za-z0-9]{8,}\.[a-z0-9]+$/.test(file);
+    res.setHeader('Cache-Control', fingerprinted ? 'public, max-age=31536000, immutable' : text ? 'public, max-age=0, must-revalidate' : 'public, max-age=86400');
     res.setHeader('ETag', etag);
     if (selected !== 'identity') res.setHeader('Content-Encoding', selected);
     if (matches(req.headers['if-none-match'], etag)) {

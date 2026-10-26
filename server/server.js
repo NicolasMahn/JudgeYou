@@ -20,6 +20,8 @@ const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const MAX_BODY_BYTES = 256 * 1024;
 // Base64 makes images a third bigger.
 const MAX_SCREENSHOTS_BODY_BYTES = Math.ceil((MAX_SCREENSHOTS * MAX_SCREENSHOT_BYTES * 4) / 3) + 1024;
+// Keep connection bursts in the kernel queue while the event loop serves assets.
+export const LISTEN_BACKLOG = 4096;
 export function createApp({
   key = process.env.OPENROUTER_KEY,
   origins = (process.env.ALLOWED_ORIGINS ?? '').split(',').filter(Boolean),
@@ -331,7 +333,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const app = createApp({ origins, journal, settings });
   app.headersTimeout = 10_000;
   app.requestTimeout = 125_000;
-  app.listen(port, () => console.log(`JudgeYou on http://localhost:${port}`));
+  app.listen({ port, backlog: LISTEN_BACKLOG }, () => console.log(`JudgeYou on http://localhost:${port}`));
   for (const name of ['SIGTERM', 'SIGINT']) process.once(name, () => {
     app.close(() => store.close());
     app.closeIdleConnections();

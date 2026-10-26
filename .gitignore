@@ -1,3 +1,5 @@
 js/key.js
 .env
 data/
+node_modules/
+dist/

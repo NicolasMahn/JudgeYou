@@ -1,5 +1,6 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
+import { join, resolve } from 'node:path';
 
 export function adminAuthorized(req, token) {
   if (!token) return false;
@@ -9,7 +10,7 @@ export function adminAuthorized(req, token) {
 }
 
 export async function serveAdmin(res) {
-  const html = await readFile(new URL('admin.html', import.meta.url));
+  const html = await readFile(process.env.PUBLIC_DIR ? join(resolve(process.env.PUBLIC_DIR), 'admin.html') : new URL('admin.html', import.meta.url));
   res.writeHead(200, {
     'Content-Type': 'text/html; charset=utf-8',
     'Cache-Control': 'no-store',
